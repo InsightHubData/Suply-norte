@@ -1099,9 +1099,20 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
         <div>
           <div class="form-card" style="margin-bottom:16px">
             <h3>📦 Novo Produto</h3>
+            <div class="row2" style="margin-bottom:12px">
+              <div class="field">
+                <label>Código Interno</label>
+                <input type="text" id="cadProdCod" placeholder="P0001" readonly
+                  style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px">
+              </div>
+              <div class="field">
+                <label>Nome do Produto</label>
+                <input type="text" id="cadProdNome" placeholder="Ex: Luva de Procedimento Tamanho M">
+              </div>
+            </div>
             <div class="field" style="margin-bottom:12px">
               <label>Descrição Completa</label>
-              <textarea id="cadProdDesc" rows="3" placeholder="Nome, especificações técnicas, marca, referência..."></textarea>
+              <textarea id="cadProdDesc" rows="3" placeholder="Especificações técnicas, marca, referência, normas..."></textarea>
             </div>
             <div class="row3">
               <div class="field">
@@ -1113,8 +1124,24 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
                 <input type="number" id="cadProdPreco" placeholder="0,00" step="0.01" min="0">
               </div>
               <div class="field">
-                <label>Referência / Código</label>
+                <label>Ref. Fabricante / Catálogo</label>
                 <input type="text" id="cadProdRef" placeholder="211010015">
+              </div>
+            </div>
+            <!-- Foto do produto -->
+            <div class="field" style="margin-top:12px">
+              <label>Foto do Produto</label>
+              <div style="display:flex;align-items:center;gap:14px;margin-top:4px">
+                <img id="cadProdImgPreview" src=""
+                  style="width:72px;height:60px;object-fit:contain;border-radius:7px;border:1.5px solid var(--gray-bd);background:#f8f8f8;display:none">
+                <div>
+                  <label class="img-upload-btn" style="padding:7px 14px;font-size:12px;cursor:pointer">
+                    📷 Selecionar foto
+                    <input type="file" id="cadProdImgInput" accept="image/*" style="display:none" onchange="loadCadProdImg(this)">
+                  </label>
+                  <span id="cadProdImgDel" style="display:none;margin-left:8px;font-size:11px;color:#c0392b;cursor:pointer" onclick="clearCadProdImg()">✕ remover</span>
+                  <div id="cadProdImgNome" style="margin-top:4px;font-size:11px;color:var(--text-sm)"></div>
+                </div>
               </div>
             </div>
             <button class="btn-primary btn-green" style="margin-top:14px;padding:10px 20px;font-size:13px" onclick="saveProduct()">✅ Salvar Produto</button>
@@ -1222,6 +1249,7 @@ function initApp(){
   setWeekFilter();
   renderHist();
   renderCadLists();
+  initProdCodField();
   if(document.getElementById('itemsBody').children.length === 0) addItemRow();
 }
 
@@ -1299,7 +1327,13 @@ function addItemRow(data){
     '<td style="text-align:center;font-weight:700;color:var(--navy)">'+id+'</td>'+
     '<td>'+
       '<div class="autocomplete-wrap">'+
-        '<textarea style="min-height:54px;resize:vertical" id="idesc-'+id+'" placeholder="Nome do produto, especificações técnicas, marca, referência..." oninput="acSearchProd('+id+')">'+(row.desc||'')+'</textarea>'+
+        '<input type="text" id="icod-'+id+'" value="'+(row.cod||'')+'" placeholder="Código P0001" '+
+          'style="width:100%;margin-bottom:5px;font-size:11px;font-weight:700;color:var(--teal);'+
+          'background:#f0faf8;border-color:#b2dfdb;border-radius:6px;padding:5px 8px" '+
+          'oninput="acSearchProdCod('+id+')" autocomplete="off">'+
+        '<div class="autocomplete-list" id="icod-list-'+id+'" style="display:none"></div>'+
+        '<textarea style="min-height:48px;resize:vertical" id="idesc-'+id+'" '+
+          'placeholder="Descrição preenchida automaticamente..." oninput="acSearchProd('+id+')">'+(row.desc||'')+'</textarea>'+
         '<div class="autocomplete-list" id="iprod-list-'+id+'" style="display:none"></div>'+
       '</div>'+
     '</td>'+
@@ -1323,23 +1357,62 @@ function addItemRow(data){
   recalcTotals();
 }
 
-function acSearchProd(rowId){
-  var val = document.getElementById('idesc-'+rowId).value.toLowerCase();
-  var listEl = document.getElementById('iprod-list-'+rowId);
-  if(!val||val.length<2){ listEl.style.display='none'; return; }
-  var filtered = products_.filter(function(p){ return (p.desc||'').toLowerCase().includes(val); });
+function fillItemFromProd(rowId, prod){
+  var codEl = document.getElementById('icod-'+rowId);
+  if(codEl) codEl.value = prod.cod||'';
+  document.getElementById('idesc-'+rowId).value = prod.desc||(prod.nome||'');
+  document.getElementById('iun-'+rowId).value   = prod.un||'UN';
+  document.getElementById('iunit-'+rowId).value = prod.preco||'';
+  // Puxa a foto cadastrada do produto para o item da proposta
+  if(prod.img){
+    itemImages[rowId] = prod.img;
+    showImgPreview(rowId, prod.img);
+  }
+  recalcRow(rowId); recalcTotals();
+  ['icod-list-'+rowId,'iprod-list-'+rowId].forEach(function(lid){
+    var el=document.getElementById(lid); if(el) el.style.display='none';
+  });
+}
+
+function acSearchProdCod(rowId){
+  var val = document.getElementById('icod-'+rowId).value.toLowerCase().trim();
+  var listEl = document.getElementById('icod-list-'+rowId);
+  if(!val){ listEl.style.display='none'; return; }
+  var filtered = products_.filter(function(p){
+    return (p.cod||'').toLowerCase().includes(val)||(p.nome||'').toLowerCase().includes(val);
+  });
   if(!filtered.length){ listEl.style.display='none'; return; }
   listEl.innerHTML='';
   filtered.forEach(function(prod){
     var d = document.createElement('div');
-    d.innerHTML = '<div class="ac-label">'+(prod.desc.substring(0,60))+(prod.desc.length>60?'...':'')+'</div><div class="ac-sub">Unid: '+(prod.un||'UN')+' | Ref: '+(prod.ref||'—')+' | R$ '+(prod.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
-    d.onclick = function(){
-      document.getElementById('idesc-'+rowId).value = prod.desc;
-      document.getElementById('iun-'+rowId).value   = prod.un||'UN';
-      document.getElementById('iunit-'+rowId).value = prod.preco||'';
-      recalcRow(rowId); recalcTotals();
-      listEl.style.display='none';
-    };
+    var nm = prod.nome||(prod.desc?prod.desc.substring(0,45):'');
+    d.innerHTML =
+      '<div class="ac-label"><span style="color:var(--teal);font-weight:700">'+(prod.cod||'')+'</span> — '+nm+'</div>'+
+      '<div class="ac-sub">'+(prod.desc?prod.desc.substring(0,60)+(prod.desc.length>60?'...':''):'')+'</div>'+
+      '<div class="ac-sub">Un: '+(prod.un||'UN')+' | R$ '+(prod.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+    d.onclick = function(){ fillItemFromProd(rowId, prod); };
+    listEl.appendChild(d);
+  });
+  listEl.style.display='block';
+}
+
+function acSearchProd(rowId){
+  var val = document.getElementById('idesc-'+rowId).value.toLowerCase();
+  var listEl = document.getElementById('iprod-list-'+rowId);
+  if(!val||val.length<2){ listEl.style.display='none'; return; }
+  var filtered = products_.filter(function(p){
+    return (p.nome||'').toLowerCase().includes(val)||(p.desc||'').toLowerCase().includes(val);
+  });
+  if(!filtered.length){ listEl.style.display='none'; return; }
+  listEl.innerHTML='';
+  filtered.forEach(function(prod){
+    var d = document.createElement('div');
+    var nm = prod.nome||(prod.desc?prod.desc.substring(0,45):'');
+    d.innerHTML =
+      '<div class="ac-label"><span style="color:var(--teal);font-size:10px">'+(prod.cod||'')+'</span> '+nm+'</div>'+
+      '<div class="ac-sub">'+(prod.desc?prod.desc.substring(0,60)+(prod.desc.length>60?'...':''):'')+'</div>'+
+      '<div class="ac-sub">Un: '+(prod.un||'UN')+' | R$ '+(prod.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+    d.onclick = function(){ fillItemFromProd(rowId, prod); };
     listEl.appendChild(d);
   });
   listEl.style.display='block';
@@ -1412,7 +1485,8 @@ function getItems(){
     var un    = document.getElementById('iun-'+id) ? document.getElementById('iun-'+id).value : 'UN';
     var qty   = parseFloat(document.getElementById('iqty-'+id) ? document.getElementById('iqty-'+id).value : 0)||0;
     var unit  = parseFloat(document.getElementById('iunit-'+id) ? document.getElementById('iunit-'+id).value : 0)||0;
-    items.push({ num:i+1, desc:desc, obs:obs, un:un, qty:qty, unit:unit, total:qty*unit, img:itemImages[id]||null });
+    var cod_ = document.getElementById('icod-'+id) ? document.getElementById('icod-'+id).value : '';
+    items.push({ num:i+1, cod:cod_, desc:desc, obs:obs, un:un, qty:qty, unit:unit, total:qty*unit, img:itemImages[id]||null });
   });
   return items;
 }
@@ -1871,18 +1945,37 @@ function saveClient(){
   toast('Cliente salvo!','ok');
 }
 
+function nextProdCod(){
+  var seq = parseInt(localStorage.getItem('sn_prod_seq')||'1');
+  return 'P' + String(seq).padStart(4,'0');
+}
+function initProdCodField(){
+  var el = document.getElementById('cadProdCod');
+  if(el) el.value = nextProdCod();
+}
 function saveProduct(){
-  var desc=document.getElementById('cadProdDesc').value.trim();
-  if(!desc){ toast('Informe a descrição do produto.','err'); return; }
+  var nome = (document.getElementById('cadProdNome').value||'').trim();
+  var desc = (document.getElementById('cadProdDesc').value||'').trim();
+  if(!nome){ toast('Informe o nome do produto.','err'); return; }
+  var cod = nextProdCod();
+  var cadImg = window._cadProdImg || null;
   products_.push({
-    id:Date.now(), desc:desc,
-    un:document.getElementById('cadProdUn').value,
-    preco:parseFloat(document.getElementById('cadProdPreco').value)||0,
-    ref:document.getElementById('cadProdRef').value
+    id:    Date.now(),
+    cod:   cod,
+    nome:  nome,
+    desc:  desc,
+    un:    (document.getElementById('cadProdUn').value||'').trim(),
+    preco: parseFloat(document.getElementById('cadProdPreco').value)||0,
+    ref:   (document.getElementById('cadProdRef').value||'').trim(),
+    img:   cadImg
   });
-  saveLSProd(); renderCadLists();
-  ['cadProdDesc','cadProdUn','cadProdPreco','cadProdRef'].forEach(function(id){ document.getElementById(id).value=''; });
-  toast('Produto salvo!','ok');
+  window._cadProdImg = null;
+  var seq = parseInt(localStorage.getItem('sn_prod_seq')||'1');
+  localStorage.setItem('sn_prod_seq', seq+1);
+  saveLSProd(); renderCadLists(); initProdCodField();
+  ['cadProdNome','cadProdDesc','cadProdUn','cadProdPreco','cadProdRef'].forEach(function(i){ document.getElementById(i).value=''; });
+  clearCadProdImg();
+  toast('Produto ' + cod + ' salvo!','ok');
 }
 
 function renderCadLists(){
@@ -1907,8 +2000,21 @@ function renderCadLists(){
     products_.forEach(function(p){
       var d=document.createElement('div');
       d.className='cad-item';
-      d.innerHTML='<div><div class="cad-item-name" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+p.desc+'</div>'+
-        '<div class="cad-item-sub">Unid: '+(p.un||'UN')+' | Ref: '+(p.ref||'—')+' | R$ '+(p.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div></div>'+
+      var nm  = p.nome || (p.desc?p.desc.substring(0,45):'—');
+      var ds  = p.desc?p.desc.substring(0,55)+(p.desc.length>55?'...':''):'';
+      var imgHtml = p.img
+        ? '<img src="'+p.img+'" style="width:44px;height:36px;object-fit:contain;border-radius:5px;border:1px solid var(--gray-bd);background:#f8f8f8;flex-shrink:0">'
+        : '<div style="width:44px;height:36px;border-radius:5px;border:1px dashed var(--gray-bd);background:#f8f8f8;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📷</div>';
+      d.innerHTML=
+        imgHtml+
+        '<div style="flex:1;min-width:0;margin-left:8px">'+
+          '<div class="cad-item-name" style="display:flex;align-items:center;gap:6px;overflow:hidden">'+
+            '<span style="font-size:10px;font-weight:700;color:var(--teal);white-space:nowrap">'+(p.cod||'—')+'</span>'+
+            '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nm+'</span>'+
+          '</div>'+
+          (ds?'<div class="cad-item-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ds+'</div>':'')+
+          '<div class="cad-item-sub">Un: '+(p.un||'UN')+' | R$ '+(p.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'+
+        '</div>'+
         '<button class="btn-sm btn-sm-r" onclick="delProduct('+p.id+')">✕</button>';
       prodDiv.appendChild(d);
     });
@@ -2203,6 +2309,31 @@ function gerarPdfPedido(){
   toast('PDF do Pedido gerado!','ok');
 }
 
+
+// ── Foto no cadastro de produto ──────────────────────────────
+function loadCadProdImg(input){
+  var file = input.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    window._cadProdImg = e.target.result;
+    var prev = document.getElementById('cadProdImgPreview');
+    prev.src = e.target.result; prev.style.display = 'block';
+    document.getElementById('cadProdImgDel').style.display  = 'inline';
+    document.getElementById('cadProdImgNome').textContent   = file.name;
+  };
+  reader.readAsDataURL(file);
+}
+function clearCadProdImg(){
+  window._cadProdImg = null;
+  var prev = document.getElementById('cadProdImgPreview');
+  if(prev){ prev.src=''; prev.style.display='none'; }
+  var del = document.getElementById('cadProdImgDel');
+  if(del) del.style.display='none';
+  var nm = document.getElementById('cadProdImgNome');
+  if(nm) nm.textContent='';
+  var inp = document.getElementById('cadProdImgInput');
+  if(inp) inp.value='';
+}
 </script>
 </body>
 </html>
