@@ -402,6 +402,36 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
   .ln-feats, .ln-badge { display: none; }
 }
 
+
+/* ─── MODAL EDITAR PRODUTO ─── */
+.prod-modal-ov{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(4px);z-index:8000;
+  align-items:center;justify-content:center;
+}
+.prod-modal-ov.open{ display:flex; animation:fadeIn .2s ease; }
+.prod-modal{
+  background:#fff;border-radius:16px;width:100%;max-width:580px;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+  padding:32px 32px 28px;
+}
+.prod-modal-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:24px;
+}
+.prod-modal-hd h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;
+  font-weight:800;color:var(--navy-dk);display:flex;align-items:center;gap:8px;
+}
+.prod-modal-close{
+  width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;
+  background:var(--gray-bg);color:var(--text-sm);font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.prod-modal-close:hover{ background:#fef0f0;color:#c0392b; }
+
 /* ─── APP ─── */
 #appShell{position:fixed;inset:0;background:var(--gray-bg);flex-direction:column;display:none}
 #appShell.active{display:flex;animation:fadeIn .35s ease}
@@ -1160,6 +1190,82 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 
   </div>
 </div>
+
+<!-- ── MODAL EDITAR PRODUTO ── -->
+<div class="prod-modal-ov" id="prodModalOv" onclick="closeProdModal(event)">
+  <div class="prod-modal" id="prodModalBox">
+    <div class="prod-modal-hd">
+      <h3>✏️ Editar Produto</h3>
+      <button class="prod-modal-close" onclick="closeProdModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="editProdId">
+
+    <div class="row2" style="margin-bottom:14px">
+      <div class="field">
+        <label>Código Interno</label>
+        <input type="text" id="editProdCod" readonly
+          style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px">
+      </div>
+      <div class="field">
+        <label>Nome do Produto</label>
+        <input type="text" id="editProdNome" placeholder="Nome do produto">
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px">
+      <label>Descrição Completa</label>
+      <textarea id="editProdDesc" rows="3"
+        placeholder="Especificações técnicas, marca, referência..."></textarea>
+    </div>
+
+    <div class="row3" style="margin-bottom:14px">
+      <div class="field">
+        <label>Unidade</label>
+        <input type="text" id="editProdUn" placeholder="UN / PCT / CX">
+      </div>
+      <div class="field">
+        <label>Vl. Unitário (R$)</label>
+        <input type="number" id="editProdPreco" step="0.01" min="0" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Ref. Fabricante</label>
+        <input type="text" id="editProdRef" placeholder="211010015">
+      </div>
+    </div>
+
+    <!-- Foto -->
+    <div class="field" style="margin-bottom:20px">
+      <label>Foto do Produto</label>
+      <div style="display:flex;align-items:center;gap:14px;margin-top:6px">
+        <img id="editProdImgPreview"
+          style="width:80px;height:64px;object-fit:contain;border-radius:8px;
+                 border:1.5px solid var(--gray-bd);background:#f8f8f8;display:none">
+        <div id="editProdImgPlaceholder"
+          style="width:80px;height:64px;border-radius:8px;border:1.5px dashed var(--gray-bd);
+                 background:#f8f8f8;display:flex;align-items:center;justify-content:center;font-size:26px">
+          📷
+        </div>
+        <div>
+          <label class="img-upload-btn" style="padding:7px 14px;font-size:12px;cursor:pointer">
+            📷 Trocar foto
+            <input type="file" id="editProdImgInput" accept="image/*"
+              style="display:none" onchange="loadEditProdImg(this)">
+          </label>
+          <span id="editProdImgDel"
+            style="display:none;margin-left:8px;font-size:11px;color:#c0392b;cursor:pointer"
+            onclick="clearEditProdImg()">✕ remover foto</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-top:4px">
+      <button class="btn-primary btn-green" onclick="saveEditProduct()">💾 Salvar Alterações</button>
+      <button class="btn-outline" onclick="closeProdModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 /* ══════════════════════════════════════════
@@ -2015,7 +2121,10 @@ function renderCadLists(){
           (ds?'<div class="cad-item-sub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+ds+'</div>':'')+
           '<div class="cad-item-sub">Un: '+(p.un||'UN')+' | R$ '+(p.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>'+
         '</div>'+
-        '<button class="btn-sm btn-sm-r" onclick="delProduct('+p.id+')">✕</button>';
+        '<div style="display:flex;gap:5px">'+
+          '<button class="btn-sm btn-sm-b" onclick="openEditProduct('+p.id+')">✏️</button>'+
+          '<button class="btn-sm btn-sm-r" onclick="delProduct('+p.id+')">✕</button>'+
+        '</div>';
       prodDiv.appendChild(d);
     });
   }
@@ -2333,6 +2442,90 @@ function clearCadProdImg(){
   if(nm) nm.textContent='';
   var inp = document.getElementById('cadProdImgInput');
   if(inp) inp.value='';
+}
+
+// ══════════════════════════════════════════
+//  EDITAR PRODUTO
+// ══════════════════════════════════════════
+function openEditProduct(id){
+  var p = products_.find(function(x){ return x.id===id; });
+  if(!p){ toast('Produto não encontrado.','err'); return; }
+
+  document.getElementById('editProdId').value    = id;
+  document.getElementById('editProdCod').value   = p.cod||'';
+  document.getElementById('editProdNome').value  = p.nome||'';
+  document.getElementById('editProdDesc').value  = p.desc||'';
+  document.getElementById('editProdUn').value    = p.un||'';
+  document.getElementById('editProdPreco').value = p.preco||'';
+  document.getElementById('editProdRef').value   = p.ref||'';
+
+  // foto
+  window._editProdImg = p.img||null;
+  var prev = document.getElementById('editProdImgPreview');
+  var ph   = document.getElementById('editProdImgPlaceholder');
+  var del  = document.getElementById('editProdImgDel');
+  if(p.img){
+    prev.src = p.img; prev.style.display='block';
+    ph.style.display='none'; del.style.display='inline';
+  } else {
+    prev.style.display='none';
+    ph.style.display='flex'; del.style.display='none';
+  }
+  document.getElementById('editProdImgInput').value='';
+  document.getElementById('prodModalOv').classList.add('open');
+}
+
+function closeProdModal(e){
+  if(e && e.target !== document.getElementById('prodModalOv')) return;
+  document.getElementById('prodModalOv').classList.remove('open');
+}
+
+function loadEditProdImg(input){
+  var file = input.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    window._editProdImg = ev.target.result;
+    var prev = document.getElementById('editProdImgPreview');
+    var ph   = document.getElementById('editProdImgPlaceholder');
+    prev.src = ev.target.result; prev.style.display='block';
+    ph.style.display='none';
+    document.getElementById('editProdImgDel').style.display='inline';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearEditProdImg(){
+  window._editProdImg = null;
+  document.getElementById('editProdImgPreview').style.display='none';
+  document.getElementById('editProdImgPreview').src='';
+  document.getElementById('editProdImgPlaceholder').style.display='flex';
+  document.getElementById('editProdImgDel').style.display='none';
+  document.getElementById('editProdImgInput').value='';
+}
+
+function saveEditProduct(){
+  var id   = parseInt(document.getElementById('editProdId').value);
+  var nome = (document.getElementById('editProdNome').value||'').trim();
+  if(!nome){ toast('Informe o nome do produto.','err'); return; }
+
+  var idx = products_.findIndex(function(x){ return x.id===id; });
+  if(idx < 0){ toast('Produto não encontrado.','err'); return; }
+
+  // mantém cod e id originais, atualiza o resto
+  products_[idx] = {
+    id:    products_[idx].id,
+    cod:   products_[idx].cod,
+    nome:  nome,
+    desc:  (document.getElementById('editProdDesc').value||'').trim(),
+    un:    (document.getElementById('editProdUn').value||'').trim(),
+    preco: parseFloat(document.getElementById('editProdPreco').value)||0,
+    ref:   (document.getElementById('editProdRef').value||'').trim(),
+    img:   window._editProdImg||null
+  };
+
+  saveLSProd(); renderCadLists();
+  document.getElementById('prodModalOv').classList.remove('open');
+  toast('Produto ' + products_[idx].cod + ' atualizado!','ok');
 }
 </script>
 </body>
