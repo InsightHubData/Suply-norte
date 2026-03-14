@@ -832,7 +832,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
               <thead>
                 <tr>
                   <th style="width:42px">Item</th>
-                  <th style="min-width:260px">Descrição / Especificação</th>
+                  <th style="min-width:210px">Nome do Produto / Especificação</th>
                   <th style="width:110px">Observação do Item</th>
                   <th style="width:62px">Unid.</th>
                   <th style="width:72px">Qtde</th>
@@ -1475,17 +1475,19 @@ function acSearch(fieldId, type){
   var val = document.getElementById(fieldId).value.toLowerCase();
   var listId = fieldId + '_list';
   var list = document.getElementById(listId);
-  if(!val){ list.style.display='none'; return; }
-  var src = type==='clients' ? clients_ : products_;
-  var filtered = src.filter(function(c){
-    return (c.nome||c.desc||'').toLowerCase().includes(val);
-  });
-  if(!filtered.length){ list.style.display='none'; return; }
-  list.innerHTML = '';
-  filtered.forEach(function(item){
-    var d = document.createElement('div');
-    if(type==='clients'){
-      d.innerHTML = '<div class="ac-label">'+item.nome+'</div><div class="ac-sub">CNPJ: '+(item.cnpj||'—')+' | '+(item.cidade||'')+'</div>';
+  if(!val||val.length<1){ list.style.display='none'; return; }
+  if(type==='clients'){
+    var filtered = clients_.filter(function(c){
+      return (c.nome||'').toLowerCase().includes(val)||(c.cnpj||'').toLowerCase().includes(val);
+    });
+    if(!filtered.length){ list.style.display='none'; return; }
+    list.innerHTML='';
+    filtered.forEach(function(item){
+      var d = document.createElement('div');
+      d.innerHTML =
+        '<div class="ac-label">'+item.nome+'</div>'+
+        '<div class="ac-sub">CNPJ: '+(item.cnpj||'—')+
+          (item.cidade?' | '+item.cidade:'')+(item.resp?' | '+item.resp:'')+'</div>';
       d.onclick = function(){
         document.getElementById('fOrgao').value      = item.nome;
         document.getElementById('fCnpjOrgao').value  = item.cnpj||'';
@@ -1493,10 +1495,12 @@ function acSearch(fieldId, type){
         document.getElementById('fRespOrgao').value  = item.resp||'';
         list.style.display='none';
       };
-    }
-    list.appendChild(d);
-  });
-  list.style.display='block';
+      list.appendChild(d);
+    });
+    list.style.display='block';
+  } else {
+    list.style.display='none';
+  }
 }
 
 document.addEventListener('click', function(e){
@@ -1522,13 +1526,18 @@ function addItemRow(data){
     '<td style="text-align:center;font-weight:700;color:var(--navy)">'+id+'</td>'+
     '<td>'+
       '<div class="autocomplete-wrap">'+
-        '<input type="text" id="icod-'+id+'" value="'+(row.cod||'')+'" placeholder="Código P0001" '+
-          'style="width:100%;margin-bottom:5px;font-size:11px;font-weight:700;color:var(--teal);'+
+        '<input type="text" id="icod-'+id+'" value="'+(row.cod||'')+'" placeholder="Cód. P0001" '+
+          'style="width:100%;margin-bottom:4px;font-size:11px;font-weight:700;color:var(--teal);'+
           'background:#f0faf8;border-color:#b2dfdb;border-radius:6px;padding:5px 8px" '+
           'oninput="acSearchProdCod('+id+')" autocomplete="off">'+
         '<div class="autocomplete-list" id="icod-list-'+id+'" style="display:none"></div>'+
-        '<textarea style="min-height:48px;resize:vertical" id="idesc-'+id+'" '+
-          'placeholder="Descrição preenchida automaticamente..." oninput="acSearchProd('+id+')">'+(row.desc||'')+'</textarea>'+
+        '<input type="text" id="inome-'+id+'" value="'+(row.nome||row.desc||'')+'" '+
+          'placeholder="Nome do Produto" '+
+          'style="width:100%;margin-bottom:4px;font-size:12.5px;font-weight:600;border-radius:6px;padding:6px 8px" '+
+          'oninput="acSearchProdNome('+id+')" autocomplete="off">'+
+        '<div class="autocomplete-list" id="inome-list-'+id+'" style="display:none"></div>'+
+        '<textarea style="min-height:38px;resize:vertical;font-size:11px" id="idesc-'+id+'" '+
+          'placeholder="Descrição técnica (editável)...">'+(row.desc||'')+'</textarea>'+
         '<div class="autocomplete-list" id="iprod-list-'+id+'" style="display:none"></div>'+
       '</div>'+
     '</td>'+
@@ -1555,7 +1564,9 @@ function addItemRow(data){
 function fillItemFromProd(rowId, prod){
   var codEl = document.getElementById('icod-'+rowId);
   if(codEl) codEl.value = prod.cod||'';
-  document.getElementById('idesc-'+rowId).value = prod.desc||(prod.nome||'');
+  var nomeEl2 = document.getElementById('inome-'+rowId);
+  if(nomeEl2) nomeEl2.value = prod.nome||'';
+  document.getElementById('idesc-'+rowId).value = prod.desc||'';
   document.getElementById('iun-'+rowId).value   = prod.un||'UN';
   document.getElementById('iunit-'+rowId).value = prod.preco||'';
   // Puxa a foto cadastrada do produto para o item da proposta
@@ -1564,7 +1575,7 @@ function fillItemFromProd(rowId, prod){
     showImgPreview(rowId, prod.img);
   }
   recalcRow(rowId); recalcTotals();
-  ['icod-list-'+rowId,'iprod-list-'+rowId].forEach(function(lid){
+  ['icod-list-'+rowId,'iprod-list-'+rowId,'inome-list-'+rowId].forEach(function(lid){
     var el=document.getElementById(lid); if(el) el.style.display='none';
   });
 }
@@ -1607,6 +1618,31 @@ function acSearchProd(rowId){
       '<div class="ac-label"><span style="color:var(--teal);font-size:10px">'+(prod.cod||'')+'</span> '+nm+'</div>'+
       '<div class="ac-sub">'+(prod.desc?prod.desc.substring(0,60)+(prod.desc.length>60?'...':''):'')+'</div>'+
       '<div class="ac-sub">Un: '+(prod.un||'UN')+' | R$ '+(prod.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
+    d.onclick = function(){ fillItemFromProd(rowId, prod); };
+    listEl.appendChild(d);
+  });
+  listEl.style.display='block';
+}
+
+/* Autocomplete pelo campo Nome do Produto */
+function acSearchProdNome(rowId){
+  var val = (document.getElementById('inome-'+rowId)||{}).value;
+  if(!val) return;
+  val = val.toLowerCase().trim();
+  var listEl = document.getElementById('inome-list-'+rowId);
+  if(!val||val.length<1){ listEl.style.display='none'; return; }
+  var filtered = products_.filter(function(p){
+    return (p.nome||'').toLowerCase().includes(val)||(p.cod||'').toLowerCase().includes(val);
+  });
+  if(!filtered.length){ listEl.style.display='none'; return; }
+  listEl.innerHTML='';
+  filtered.forEach(function(prod){
+    var d = document.createElement('div');
+    var nm = prod.nome||(prod.desc?prod.desc.substring(0,45):'');
+    d.innerHTML =
+      '<div class="ac-label"><span style="color:var(--teal);font-size:10px;margin-right:5px">'+(prod.cod||'')+'</span>'+nm+'</div>'+
+      '<div class="ac-sub">'+(prod.desc?prod.desc.substring(0,65)+(prod.desc.length>65?'...':''):'')+'</div>'+
+      '<div class="ac-sub">Un: '+(prod.un||'UN')+' | R\$ '+(prod.preco||0).toLocaleString('pt-BR',{minimumFractionDigits:2})+'</div>';
     d.onclick = function(){ fillItemFromProd(rowId, prod); };
     listEl.appendChild(d);
   });
@@ -1680,8 +1716,9 @@ function getItems(){
     var un    = document.getElementById('iun-'+id) ? document.getElementById('iun-'+id).value : 'UN';
     var qty   = parseFloat(document.getElementById('iqty-'+id) ? document.getElementById('iqty-'+id).value : 0)||0;
     var unit  = parseFloat(document.getElementById('iunit-'+id) ? document.getElementById('iunit-'+id).value : 0)||0;
-    var cod_ = document.getElementById('icod-'+id) ? document.getElementById('icod-'+id).value : '';
-    items.push({ num:i+1, cod:cod_, desc:desc, obs:obs, un:un, qty:qty, unit:unit, total:qty*unit, img:itemImages[id]||null });
+    var cod_  = document.getElementById('icod-'+id)  ? document.getElementById('icod-'+id).value  : '';
+    var nome_ = document.getElementById('inome-'+id) ? document.getElementById('inome-'+id).value : '';
+    items.push({ num:i+1, cod:cod_, nome:nome_, desc:desc, obs:obs, un:un, qty:qty, unit:unit, total:qty*unit, img:itemImages[id]||null });
   });
   return items;
 }
