@@ -407,24 +407,35 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 #appShell.active{display:flex;animation:fadeIn .35s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 
-.app-hd{background:linear-gradient(135deg,var(--navy-dk) 0%,var(--navy) 60%,var(--blue) 100%);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,.25);border-bottom:2px solid rgba(255,255,255,.08);flex-shrink:0;position:relative;z-index:100}
-.hd-left{display:flex;align-items:center;gap:14px}
-.hd-logo-wrap{background:rgba(255,255,255,.94);border-radius:10px;padding:5px 14px;display:flex;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.hd-logo{height:40px;object-fit:contain;filter:none}
+.app-hd{
+  background:linear-gradient(90deg,#2a6fa8 0%,#1e4d7a 18%,#1a3a5c 42%,#112843 70%,#0a1c2e 100%);
+  padding:0 24px 0 20px;
+  display:flex;
+  align-items:stretch;
+  justify-content:space-between;
+  box-shadow:0 3px 16px rgba(0,0,0,.32);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+  position:relative;
+  z-index:100;
+  min-height:52px;
+}
+.hd-left{display:flex;align-items:stretch;gap:0}
+.hd-logo-wrap{background:transparent;border:none;padding:0 20px 0 0;display:flex;align-items:center;flex-shrink:0}
+.hd-logo{height:36px;object-fit:contain;filter:none}
 .hd-logo-txt{height:36px;display:flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:1px}
-.hd-titles{display:flex;flex-direction:column}
-.hd-main{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:.5px}
-.hd-sub{font-size:11px;font-weight:500;color:rgba(255,255,255,.65);letter-spacing:1.5px;text-transform:uppercase}
-.hd-right{display:flex;align-items:center;gap:8px}
-.hd-pill{height:32px;padding:0 12px;border-radius:6px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);color:#fff}
-.btn-hd{height:32px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:5px}
+.hd-sep{width:1px;background:rgba(255,255,255,.12);margin:10px 0;flex-shrink:0}
+.app-nav{display:flex;gap:0;align-items:stretch;flex:1;background:transparent}
+.nav-tab{padding:0 20px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;border-bottom:3px solid transparent;border-top:3px solid transparent;transition:all .2s;user-select:none;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.nav-tab:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.nav-tab.active{color:#fff;border-bottom-color:var(--green-lt);background:rgba(255,255,255,.06)}
+.hd-right{display:flex;align-items:center;gap:8px;padding-left:16px}
+.hd-pill{height:30px;padding:0 12px;border-radius:6px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;white-space:nowrap;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff}
+.btn-hd{height:30px;padding:0 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;display:flex;align-items:center;gap:5px}
 .btn-hd-red{background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;box-shadow:0 2px 8px rgba(192,57,43,.35)}
 .btn-hd-red:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(192,57,43,.45)}
-
-.app-nav{background:var(--navy);display:flex;gap:2px;padding:0 24px;flex-shrink:0}
-.nav-tab{padding:12px 20px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:rgba(255,255,255,.55);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;user-select:none;display:flex;align-items:center;gap:7px}
-.nav-tab:hover{color:rgba(255,255,255,.85)}
-.nav-tab.active{color:#fff;border-bottom-color:var(--green-lt)}
+.hd-titles{display:none}
+.hd-main,.hd-sub{display:none}
 
 .app-body{flex:1;overflow-y:auto;padding:28px}
 
@@ -640,6 +651,8 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 <!-- ════ APP ════ -->
 <div id="appShell">
   <header class="app-hd">
+
+    <!-- Esquerda: logo + separador + tabs de navegação -->
     <div class="hd-left">
       <div class="hd-logo-wrap">
         <img class="hd-logo" id="hdLogoImg"
@@ -648,17 +661,16 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
           onerror="this.style.display='none';document.getElementById('hdLogoTxt').style.display='flex'">
         <span class="hd-logo-txt" id="hdLogoTxt" style="display:none">SN</span>
       </div>
-    </div>
+      <div class="hd-sep"></div>
+</div>
+
+    <!-- Direita: usuário logado + sair -->
     <div class="hd-right">
       <div class="hd-pill" id="hdUser">👤 ...</div>
       <button class="btn-hd btn-hd-red" onclick="doLogout()">🚪 Sair</button>
     </div>
+
   </header>
-  <nav class="app-nav">
-    <div class="nav-tab active" data-tab="tabProp" onclick="switchTab(this)">📄 Nova Proposta</div>
-    <div class="nav-tab" data-tab="tabHist" onclick="switchTab(this)">📋 Histórico Semanal</div>
-    <div class="nav-tab" data-tab="tabCad" onclick="switchTab(this)">🗂️ Cadastros</div>
-  </nav>
   <div class="app-body">
 
     <!-- ── PROPOSTA ── -->
