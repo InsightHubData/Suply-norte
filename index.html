@@ -651,8 +651,6 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 <!-- ════ APP ════ -->
 <div id="appShell">
   <header class="app-hd">
-
-    <!-- Esquerda: logo + separador + tabs de navegação -->
     <div class="hd-left">
       <div class="hd-logo-wrap">
         <img class="hd-logo" id="hdLogoImg"
@@ -662,14 +660,17 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
         <span class="hd-logo-txt" id="hdLogoTxt" style="display:none">SN</span>
       </div>
       <div class="hd-sep"></div>
-</div>
-
-    <!-- Direita: usuário logado + sair -->
+      <nav class="app-nav">
+        <div class="nav-tab active" data-tab="tabProp"  onclick="switchTab(this)">📄 Nova Proposta</div>
+        <div class="nav-tab"        data-tab="tabPed"   onclick="switchTab(this)">🛒 Pedido de Venda</div>
+        <div class="nav-tab"        data-tab="tabHist"  onclick="switchTab(this)">📋 Histórico Semanal</div>
+        <div class="nav-tab"        data-tab="tabCad"   onclick="switchTab(this)">🗂️ Cadastros</div>
+      </nav>
+    </div>
     <div class="hd-right">
       <div class="hd-pill" id="hdUser">👤 ...</div>
       <button class="btn-hd btn-hd-red" onclick="doLogout()">🚪 Sair</button>
     </div>
-
   </header>
   <div class="app-body">
 
@@ -839,6 +840,175 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
           <button class="btn-primary btn-green" onclick="generatePDF()">📄 Gerar PDF da Proposta</button>
           <button class="btn-primary" onclick="saveHist()">💾 Salvar no Histórico</button>
           <button class="btn-outline" onclick="clearForm()">🗑️ Limpar Formulário</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── PEDIDO DE VENDA ── -->
+    <div class="panel" id="tabPed">
+      <div class="sec-title">🛒 Gerar Pedido de Venda</div>
+      <div class="sec-sub">Busque uma cotação pelo número e gere o pedido de venda com os dados puxados automaticamente.</div>
+
+      <!-- Busca por número da proposta -->
+      <div class="form-card" style="margin-bottom:20px">
+        <h3>🔍 Buscar Cotação</h3>
+        <div class="row2" style="align-items:flex-end">
+          <div class="field">
+            <label>Nº da Proposta / Cotação</label>
+            <div class="inp-wrap" style="display:flex;gap:8px">
+              <input type="text" id="pedSearch" placeholder="Ex: NC00327" style="text-transform:uppercase">
+              <button class="btn-primary" style="white-space:nowrap;padding:10px 18px;font-size:13px" onclick="buscarCotacao()">🔍 Buscar</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Status da Busca</label>
+            <div id="pedStatus" style="padding:10px 14px;border-radius:7px;background:var(--gray-bg);border:1.5px solid var(--gray-bd);font-size:13px;color:var(--text-sm);min-height:40px;display:flex;align-items:center">
+              Digite o número e clique em Buscar
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dados do pedido (preenchidos automaticamente) -->
+      <div id="pedForm" style="display:none">
+        <div class="form-card" style="margin-bottom:20px">
+          <h3>📋 Dados do Pedido de Venda</h3>
+
+          <div class="row4" style="margin-bottom:16px">
+            <div class="field">
+              <label>Nº do Pedido</label>
+              <input type="text" id="pedNum" readonly style="background:#e8f4fd;font-weight:700;color:var(--navy)">
+            </div>
+            <div class="field">
+              <label>Cotação de Referência</label>
+              <input type="text" id="pedCotRef" readonly style="background:#f0f8f0;font-weight:600;color:var(--teal)">
+            </div>
+            <div class="field">
+              <label>Data do Pedido</label>
+              <input type="date" id="pedData">
+            </div>
+            <div class="field">
+              <label>Modalidade</label>
+              <input type="text" id="pedModalidade">
+            </div>
+          </div>
+
+          <div class="row2" style="margin-bottom:16px">
+            <div class="field">
+              <label>Destinatário / Cliente</label>
+              <input type="text" id="pedOrgao">
+            </div>
+            <div class="field">
+              <label>CNPJ do Destinatário</label>
+              <input type="text" id="pedCnpjOrgao">
+            </div>
+          </div>
+
+          <div class="row3" style="margin-bottom:16px">
+            <div class="field">
+              <label>Cidade</label>
+              <input type="text" id="pedCidadeOrgao">
+            </div>
+            <div class="field">
+              <label>Pregão / Edital</label>
+              <input type="text" id="pedPregao">
+            </div>
+            <div class="field">
+              <label>Lote</label>
+              <input type="text" id="pedLote">
+            </div>
+          </div>
+
+          <div class="row3" style="margin-bottom:16px">
+            <div class="field">
+              <label>Vendedor Responsável</label>
+              <input type="text" id="pedVendedor">
+            </div>
+            <div class="field">
+              <label>Telefone</label>
+              <input type="text" id="pedTel">
+            </div>
+            <div class="field">
+              <label>E-mail</label>
+              <input type="text" id="pedEmail">
+            </div>
+          </div>
+
+          <div class="row4">
+            <div class="field">
+              <label>Cond. de Pagamento</label>
+              <input type="text" id="pedPgto">
+            </div>
+            <div class="field">
+              <label>Prazo de Entrega</label>
+              <input type="text" id="pedEntrega">
+            </div>
+            <div class="field">
+              <label>Frete</label>
+              <input type="text" id="pedFrete">
+            </div>
+            <div class="field">
+              <label>Local de Entrega</label>
+              <input type="text" id="pedLocal">
+            </div>
+          </div>
+        </div>
+
+        <!-- Itens do pedido -->
+        <div class="form-card" style="margin-bottom:20px">
+          <h3>📦 Itens do Pedido</h3>
+          <div class="items-wrap">
+            <table class="items-tbl">
+              <thead>
+                <tr>
+                  <th style="width:40px">#</th>
+                  <th>Descrição</th>
+                  <th style="width:80px">Un.</th>
+                  <th style="width:80px">Qtd</th>
+                  <th style="width:110px">Vlr Unit (R$)</th>
+                  <th style="width:110px">Total (R$)</th>
+                </tr>
+              </thead>
+              <tbody id="pedItemsTbody"></tbody>
+            </table>
+          </div>
+
+          <div class="totals-row">
+            <div class="total-chip">
+              <div class="tc-lbl">Subtotal</div>
+              <div class="tc-val" id="pedSubtotal">R$ 0,00</div>
+            </div>
+            <div class="total-chip">
+              <div class="tc-lbl">Desconto (%)</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="pedDesconto" min="0" max="100" step="0.1" value="0"
+                  style="width:60px;padding:4px 8px;border:1.5px solid var(--gray-bd);border-radius:6px;font-size:14px;text-align:center"
+                  onchange="recalcPed()">
+                <span style="font-size:12px;color:var(--text-sm)">%</span>
+              </div>
+            </div>
+            <div class="total-chip grand">
+              <div class="tc-lbl">Total do Pedido</div>
+              <div class="tc-val" id="pedTotal">R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observações -->
+        <div class="form-card" style="margin-bottom:20px">
+          <h3>📝 Observações</h3>
+          <div class="field">
+            <label>Observações do Pedido</label>
+            <textarea id="pedObs" rows="3" placeholder="Informações adicionais, condições especiais, etc."></textarea>
+          </div>
+        </div>
+
+        <!-- Ações -->
+        <div class="btn-row">
+          <button class="btn-primary btn-green" onclick="salvarPedido()">💾 Salvar Pedido</button>
+          <button class="btn-primary"           onclick="gerarPdfPedido()">📄 Gerar PDF</button>
+          <button class="btn-outline"            onclick="limparPedido()">🗑️ Limpar</button>
         </div>
       </div>
     </div>
@@ -1791,6 +1961,248 @@ function toast(msg,type){
   w.appendChild(el);
   setTimeout(function(){ el.remove(); },3200);
 }
+
+// ══════════════════════════════════════════
+//  PEDIDO DE VENDA
+// ══════════════════════════════════════════
+var pedSeq_ = parseInt(localStorage.getItem('sn_ped_seq') || '1');
+var pedidos_ = [];
+try { pedidos_ = JSON.parse(localStorage.getItem('sn_pedidos') || '[]'); } catch(e){ pedidos_=[]; }
+
+function pedNumFmt(n){ return 'PV' + String(n).padStart('00001'.length,0); }
+
+function buscarCotacao(){
+  var num = document.getElementById('pedSearch').value.trim().toUpperCase();
+  var st  = document.getElementById('pedStatus');
+  if(!num){ st.textContent='Digite o número da proposta.'; st.style.color='#c0392b'; return; }
+
+  var cot = history_.find(function(h){ return h.num && h.num.toUpperCase()===num; });
+  if(!cot){
+    st.innerHTML='<span style="color:#c0392b">❌ Cotação <b>'+num+'</b> não encontrada no histórico.</span>';
+    document.getElementById('pedForm').style.display='none';
+    return;
+  }
+
+  st.innerHTML='<span style="color:var(--teal)">✅ Cotação <b>'+cot.num+'</b> encontrada — dados carregados.</span>';
+  preencherPedForm(cot);
+  document.getElementById('pedForm').style.display='block';
+}
+
+function preencherPedForm(cot){
+  // Número automático do pedido
+  var numPed = pedNumFmt(pedSeq_);
+  document.getElementById('pedNum').value        = numPed;
+  document.getElementById('pedCotRef').value     = cot.num || '';
+  document.getElementById('pedData').value       = new Date().toISOString().split('T')[0];
+  document.getElementById('pedModalidade').value = cot.modalidade || '';
+  document.getElementById('pedOrgao').value      = cot.orgao || '';
+  document.getElementById('pedCnpjOrgao').value  = cot.cnpjOrgao || '';
+  document.getElementById('pedCidadeOrgao').value= cot.cidadeOrgao || '';
+  document.getElementById('pedPregao').value     = cot.pregao || '';
+  document.getElementById('pedLote').value       = cot.lote || '';
+  document.getElementById('pedVendedor').value   = cot.vendedor || '';
+  document.getElementById('pedTel').value        = cot.tel || '';
+  document.getElementById('pedEmail').value      = cot.email || '';
+  document.getElementById('pedPgto').value       = cot.pgto || '';
+  document.getElementById('pedEntrega').value    = cot.entrega || '';
+  document.getElementById('pedFrete').value      = cot.frete || '';
+  document.getElementById('pedLocal').value      = cot.local || '';
+  document.getElementById('pedDesconto').value   = cot.desconto || 0;
+
+  // Montar tabela de itens
+  var tbody = document.getElementById('pedItemsTbody');
+  tbody.innerHTML = '';
+  (cot.items||[]).forEach(function(it, i){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="text-align:center;color:var(--text-sm)">'+(i+1)+'</td>'+
+      '<td><input type="text" value="'+escHtml(it.desc||'')+'" onchange="recalcPed()"></td>'+
+      '<td><input type="text" value="'+escHtml(it.un||'')+'" style="text-align:center"></td>'+
+      '<td><input type="number" value="'+(it.qty||0)+'" min="0" step="1" style="text-align:right" onchange="recalcPed()"></td>'+
+      '<td><input type="number" value="'+(it.price||0)+'" min="0" step="0.01" style="text-align:right" onchange="recalcPed()"></td>'+
+      '<td style="text-align:right;font-weight:600;color:var(--navy);padding:6px 10px" class="ped-row-total">'+fmtBRL((it.qty||0)*(it.price||0))+'</td>';
+    tbody.appendChild(tr);
+  });
+  recalcPed();
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function recalcPed(){
+  var rows = document.querySelectorAll('#pedItemsTbody tr');
+  var sub  = 0;
+  rows.forEach(function(tr){
+    var inputs = tr.querySelectorAll('input[type="number"]');
+    var qty    = parseFloat(inputs[0]?inputs[0].value:0)||0;
+    var price  = parseFloat(inputs[1]?inputs[1].value:0)||0;
+    var t      = qty*price;
+    sub += t;
+    var cell = tr.querySelector('.ped-row-total');
+    if(cell) cell.textContent = fmtBRL(t);
+  });
+  var disc  = parseFloat(document.getElementById('pedDesconto').value)||0;
+  var grand = sub*(1-disc/100);
+  document.getElementById('pedSubtotal').textContent = fmtBRL(sub);
+  document.getElementById('pedTotal').textContent    = fmtBRL(grand);
+}
+
+function getPedItems(){
+  var rows = document.querySelectorAll('#pedItemsTbody tr');
+  var items=[];
+  rows.forEach(function(tr){
+    var inps = tr.querySelectorAll('input');
+    items.push({
+      desc:  inps[0]?inps[0].value:'',
+      un:    inps[1]?inps[1].value:'',
+      qty:   parseFloat(inps[2]?inps[2].value:0)||0,
+      price: parseFloat(inps[3]?inps[3].value:0)||0,
+      total: (parseFloat(inps[2]?inps[2].value:0)||0)*(parseFloat(inps[3]?inps[3].value:0)||0)
+    });
+  });
+  return items;
+}
+
+function getPedData(){
+  var items = getPedItems();
+  var disc  = parseFloat(document.getElementById('pedDesconto').value)||0;
+  var sub   = items.reduce(function(a,i){ return a+i.total; },0);
+  return {
+    num:      document.getElementById('pedNum').value,
+    cotRef:   document.getElementById('pedCotRef').value,
+    data:     document.getElementById('pedData').value,
+    modalidade: document.getElementById('pedModalidade').value,
+    orgao:    document.getElementById('pedOrgao').value,
+    cnpjOrgao: document.getElementById('pedCnpjOrgao').value,
+    cidadeOrgao: document.getElementById('pedCidadeOrgao').value,
+    pregao:   document.getElementById('pedPregao').value,
+    lote:     document.getElementById('pedLote').value,
+    vendedor: document.getElementById('pedVendedor').value,
+    tel:      document.getElementById('pedTel').value,
+    email:    document.getElementById('pedEmail').value,
+    pgto:     document.getElementById('pedPgto').value,
+    entrega:  document.getElementById('pedEntrega').value,
+    frete:    document.getElementById('pedFrete').value,
+    local:    document.getElementById('pedLocal').value,
+    obs:      document.getElementById('pedObs').value,
+    desconto: disc,
+    items:    items,
+    subtotal: sub,
+    grand:    sub*(1-disc/100)
+  };
+}
+
+function salvarPedido(){
+  var d = getPedData();
+  if(!d.num||!d.orgao){ toast('Preencha ao menos Nº e Destinatário.','err'); return; }
+  var idx = pedidos_.findIndex(function(p){ return p.num===d.num; });
+  if(idx>=0) pedidos_[idx]=d; else { pedidos_.unshift(d); pedSeq_++; localStorage.setItem('sn_ped_seq',pedSeq_); }
+  localStorage.setItem('sn_pedidos', JSON.stringify(pedidos_));
+  toast('Pedido '+d.num+' salvo!','ok');
+}
+
+function limparPedido(){
+  document.getElementById('pedSearch').value='';
+  document.getElementById('pedStatus').textContent='Digite o número e clique em Buscar';
+  document.getElementById('pedStatus').style.color='';
+  document.getElementById('pedForm').style.display='none';
+}
+
+function gerarPdfPedido(){
+  var d = getPedData();
+  if(!d.num||!d.orgao){ toast('Preencha ao menos Nº e Destinatário.','err'); return; }
+  var { jsPDF } = window.jspdf;
+  var doc = new jsPDF({ unit:'mm', format:'a4' });
+  var W=210, mg=14, y=mg;
+  var navy=[15,37,64], teal=[26,127,110], grey=[240,244,248], dark=[30,45,61];
+
+  // Cabeçalho
+  doc.setFillColor(...navy); doc.rect(0,0,W,28,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(255,255,255);
+  doc.text('SUPPLY NORTE — PEDIDO DE VENDA', mg, 11);
+  doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('CNPJ 54.721.566/0001-31  |  Betim — MG', mg, 17);
+  doc.text('Pedido: '+d.num+'   Ref. Cotação: '+d.cotRef+'   Data: '+(d.data||''), mg, 23);
+  y=34;
+
+  function banda(label, val, x, w, cor){
+    if(cor){ doc.setFillColor(...cor); doc.rect(x,y-4,w,7,'F'); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...dark);
+    doc.text(label, x+1, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(String(val||''), x+1, y+4);
+  }
+
+  // Bloco destinatário
+  doc.setFillColor(...grey); doc.rect(mg, y-1, W-mg*2, 26,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...teal);
+  doc.text('DESTINATÁRIO', mg+1, y+3);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...dark);
+  doc.text(d.orgao||'', mg+1, y+9);
+  doc.setFontSize(8.5);
+  doc.text('CNPJ: '+(d.cnpjOrgao||'')+'   Cidade: '+(d.cidadeOrgao||''), mg+1, y+15);
+  doc.text('Pregão: '+(d.pregao||'')+'   Lote: '+(d.lote||'')+'   Modalidade: '+(d.modalidade||''), mg+1, y+21);
+  y+=30;
+
+  // Bloco vendedor
+  var c4=(W-mg*2)/4;
+  [['Vendedor',d.vendedor],[' Telefone',d.tel],['E-mail',d.email],['Validade',d.data]].forEach(function(f,i){
+    banda(f[0],f[1], mg+i*c4, c4, i%2===0?grey:null);
+  });
+  y+=12;
+
+  // Tabela de itens
+  var cols=[8,82,16,16,28,28]; // widths
+  var headers=['#','Descrição','Un','Qtd','Vlr Unit','Total'];
+  var cx=mg;
+  doc.setFillColor(...navy);
+  cols.forEach(function(w,i){
+    doc.rect(cx, y-4, w, 7,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(255,255,255);
+    doc.text(headers[i], cx+1, y);
+    cx+=w;
+  });
+  y+=5;
+
+  d.items.forEach(function(it,idx){
+    if(y>270){ doc.addPage(); y=mg; }
+    var rowH=8;
+    if(idx%2===0){ doc.setFillColor(248,251,254); doc.rect(mg,y-3,W-mg*2,rowH,'F'); }
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...dark);
+    var cx2=mg;
+    [String(idx+1), it.desc||'', it.un||'', String(it.qty||0), fmtBRL(it.price||0), fmtBRL(it.total||0)].forEach(function(v,i){
+      doc.text(v, cx2+1, y+1, {maxWidth:cols[i]-2});
+      cx2+=cols[i];
+    });
+    y+=rowH;
+  });
+  y+=4;
+
+  // Totais
+  doc.setFillColor(232,244,253); doc.rect(mg+70, y, W-mg-70-mg, 22,'F');
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(...dark);
+  doc.text('Subtotal:', mg+72, y+6);  doc.setFont('helvetica','bold'); doc.text(fmtBRL(d.subtotal), W-mg-32, y+6, {align:'right'});
+  doc.setFont('helvetica','normal');
+  doc.text('Desconto: '+d.desconto+'%', mg+72, y+12); doc.setFont('helvetica','bold'); doc.text(fmtBRL(d.subtotal*(d.desconto/100)), W-mg-32, y+12, {align:'right'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...teal);
+  doc.text('TOTAL DO PEDIDO:', mg+72, y+20);
+  doc.text(fmtBRL(d.grand), W-mg-32, y+20, {align:'right'});
+  y+=28;
+
+  // Condições
+  if(y>260){ doc.addPage(); y=mg; }
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...navy);
+  doc.text('Cond. Pagamento: '+( d.pgto||'-')+'   Entrega: '+(d.entrega||'-')+'   Frete: '+(d.frete||'-')+'   Local: '+(d.local||'-'), mg, y);
+  y+=8;
+  if(d.obs){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...dark); doc.text('Obs.: '+d.obs, mg, y, {maxWidth:W-mg*2}); y+=10; }
+
+  // Rodapé
+  doc.setFontSize(7.5); doc.setTextColor(150,150,150);
+  doc.text('Supply Norte Soluções Científicas | CNPJ 54.721.566/0001-31 | Betim-MG | Documento gerado em '+new Date().toLocaleDateString('pt-BR'), mg, 290);
+
+  doc.save('Pedido_'+d.num+'.pdf');
+  toast('PDF do Pedido gerado!','ok');
+}
+
 </script>
 </body>
 </html>
