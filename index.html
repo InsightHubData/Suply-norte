@@ -570,8 +570,9 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .field textarea{resize:vertical;min-height:70px}
 
 .autocomplete-wrap{position:relative}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:7px;z-index:2000;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
-.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:7px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.autocomplete-wrap{position:relative;z-index:auto}
+.items-tbl td{overflow:visible!important}
 .autocomplete-list div{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--gray-bd)}
 .autocomplete-list div:last-child{border-bottom:none}
 .autocomplete-list div:hover{background:var(--accent);color:var(--navy)}
@@ -955,7 +956,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
         </div>
       </div>
     </div>
-
+    </div>
 
     <!-- ── PEDIDO DE VENDA ── -->
     <div class="panel" id="tabPed">
@@ -2946,6 +2947,5 @@ function saveEditClient(){
   toast('Cliente '+nome+' atualizado!','ok');
 }
 </script>
-</div>
 </body>
 </html>
