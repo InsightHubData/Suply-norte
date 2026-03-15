@@ -844,12 +844,11 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
               <div class="autocomplete-list" id="fOrgao_list" style="display:none"></div>
             </div>
           </div>
-          <div class="row2">
+          <div class="row3" style="margin-top:0">
             <div class="field">
               <label>CNPJ do Destinatário</label>
               <input type="text" id="fCnpjOrgao" placeholder="00.000.000/0001-00">
             </div>
-          <div class="row2" style="margin-top:12px">
             <div class="field">
               <label>Cidade / UF de Entrega</label>
               <input type="text" id="fCidadeOrgao" placeholder="Belo Horizonte / MG">
@@ -957,7 +956,6 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
           <button class="btn-outline" onclick="clearForm()">🗑️ Limpar Formulário</button>
         </div>
       </div>
-    </div>
     </div>
 
     <!-- ── PEDIDO DE VENDA ── -->
@@ -1900,13 +1898,13 @@ async function generatePDF(){
 
   // Logo/nome empresa
   doc.setFont('helvetica','bold');
-  doc.setFontSize(13);
+  doc.setFontSize(9);
   setC(white);
-  doc.text('SUPPLY NORTE', 10, 10);
+  doc.text(EMPRESA.razao, 10, 11);
   doc.setFont('helvetica','normal');
   doc.setFontSize(8.5);
   setC([200,225,235]);
-  doc.text('Soluções Científicas e Produtos Laboratoriais', 10, 16);
+  doc.text('Soluções Científicas e Produtos Laboratoriais', 10, 16.5);
 
   // Info empresa direita
   doc.setFont('helvetica','normal');
@@ -2178,7 +2176,7 @@ function addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA){
     doc.setFont('helvetica','normal');
     doc.setFontSize(7);
     doc.setTextColor.apply(doc, white);
-    doc.text('Supply Norte  |  CNPJ: '+EMPRESA.cnpj+'  |  '+EMPRESA.cidade+' — MG', mL, H-4);
+    doc.text(EMPRESA.razao+'  |  CNPJ: '+EMPRESA.cnpj+'  |  '+EMPRESA.cidade+' — MG', mL, H-4);
     doc.text('Pág. '+i+' de '+pages, W-mR, H-4, {align:'right'});
   }
 }
