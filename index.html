@@ -558,7 +558,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .sec-sub{font-size:13px;color:var(--text-sm);margin-bottom:24px}
 
 .form-grid{display:grid;gap:20px}
-.form-card{background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 12px rgba(26,58,92,.07);border:1px solid var(--gray-bd)}
+.form-card{background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 12px rgba(26,58,92,.07);border:1px solid var(--gray-bd);overflow:visible}
 .form-card h3{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--teal);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--accent);display:flex;align-items:center;gap:8px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
@@ -579,7 +579,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .autocomplete-list .ac-label{font-weight:700;color:var(--navy)}
 .autocomplete-list .ac-sub{font-size:11px;color:var(--text-sm)}
 
-.items-wrap{overflow-x:auto}
+.items-wrap{overflow:visible}
 .items-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .items-tbl th{background:var(--navy);color:#fff;padding:9px 10px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap}
 .items-tbl th:first-child{border-radius:6px 0 0 0}.items-tbl th:last-child{border-radius:0 6px 0 0}
@@ -1668,9 +1668,13 @@ function fillItemFromProd(rowId, prod){
   if(codEl) codEl.value = prod.cod||'';
   var nomeEl2 = document.getElementById('inome-'+rowId);
   if(nomeEl2) nomeEl2.value = prod.nome||'';
-  document.getElementById('idesc-'+rowId).value = prod.desc||'';
-  document.getElementById('iun-'+rowId).value   = prod.un||'UN';
-  document.getElementById('iunit-'+rowId).value = prod.preco||'';
+  // preenche iobs- com a descrição (campo idesc foi unificado com iobs)
+  var obsEl = document.getElementById('iobs-'+rowId);
+  if(obsEl) obsEl.value = prod.desc||'';
+  var unEl = document.getElementById('iun-'+rowId);
+  if(unEl) unEl.value = prod.un||'UN';
+  var unitEl = document.getElementById('iunit-'+rowId);
+  if(unitEl) unitEl.value = prod.preco||'';
   // Puxa a foto cadastrada do produto para o item da proposta
   if(prod.img){
     itemImages[rowId] = prod.img;
@@ -1705,7 +1709,7 @@ function acSearchProdCod(rowId){
 }
 
 function acSearchProd(rowId){
-  var val = document.getElementById('idesc-'+rowId).value.toLowerCase();
+  var val = document.getElementById('iobs-'+rowId) ? document.getElementById('iobs-'+rowId).value.toLowerCase() : '';
   var listEl = document.getElementById('iprod-list-'+rowId);
   if(!val||val.length<2){ listEl.style.display='none'; return; }
   var filtered = products_.filter(function(p){
@@ -1813,7 +1817,7 @@ function getItems(){
   var items=[];
   document.querySelectorAll('#itemsBody tr').forEach(function(tr,i){
     var id = tr.id.replace('irow-','');
-    var desc  = document.getElementById('idesc-'+id) ? document.getElementById('idesc-'+id).value : '';
+    var desc  = document.getElementById('iobs-'+id)  ? document.getElementById('iobs-'+id).value  : '';
     var obs   = document.getElementById('iobs-'+id) ? document.getElementById('iobs-'+id).value : '';
     var un    = document.getElementById('iun-'+id) ? document.getElementById('iun-'+id).value : 'UN';
     var qty   = parseFloat(document.getElementById('iqty-'+id) ? document.getElementById('iqty-'+id).value : 0)||0;
