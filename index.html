@@ -625,7 +625,9 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .hist-tbl td{padding:11px 16px;border-bottom:1px solid var(--gray-bd);color:var(--text)}
 .hist-tbl tr:last-child td{border-bottom:none}.hist-tbl tr:hover td{background:var(--accent)}
 .hist-acts{display:flex;gap:6px}
-.btn-sm{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .15s}
+.btn-sm{padding:5px 11px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .18s;position:relative}
+.btn-sm[title]:hover::after{content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(15,37,64,.92);color:#fff;font-size:10px;font-weight:600;white-space:nowrap;padding:4px 8px;border-radius:5px;pointer-events:none;z-index:9999;letter-spacing:.3px}
+.btn-sm[title]:hover::before{content:'';position:absolute;bottom:calc(100% + 1px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:rgba(15,37,64,.92);pointer-events:none;z-index:9999}
 .btn-sm-b{background:var(--accent);color:var(--blue);border:1px solid #b0d3f0}.btn-sm-b:hover{background:var(--blue);color:#fff}
 .btn-sm-g{background:#d4edda;color:#155724;border:1px solid #b8dacc}.btn-sm-g:hover{background:var(--green);color:#fff}
 .btn-sm-r{background:#fef0f0;color:#c0392b;border:1px solid #f5c6c6}.btn-sm-r:hover{background:#c0392b;color:#fff}
@@ -1902,17 +1904,17 @@ async function generatePDF(){
   setC(white);
   doc.text('SUPPLY NORTE', 10, 10);
   doc.setFont('helvetica','normal');
-  doc.setFontSize(7.5);
-  setC([180,210,220]);
-  doc.text('Soluções Científicas e Produtos Laboratoriais', 10, 15.5);
+  doc.setFontSize(8.5);
+  setC([200,225,235]);
+  doc.text('Soluções Científicas e Produtos Laboratoriais', 10, 16);
 
   // Info empresa direita
   doc.setFont('helvetica','normal');
-  doc.setFontSize(7);
-  setC([200,220,230]);
-  doc.text('CNPJ: '+EMPRESA.cnpj, W-mR, 8, {align:'right'});
-  doc.text('Ins. Estadual: '+EMPRESA.ie, W-mR, 13, {align:'right'});
-  doc.text(EMPRESA.cidade+' — MG', W-mR, 18, {align:'right'});
+  doc.setFontSize(8);
+  setC([215,232,242]);
+  doc.text('CNPJ: '+EMPRESA.cnpj, W-mR, 8.5, {align:'right'});
+  doc.text('Ins. Estadual: '+EMPRESA.ie, W-mR, 13.5, {align:'right'});
+  doc.text(EMPRESA.cidade+' — MG', W-mR, 18.5, {align:'right'});
   y = 27;
 
   // Data alinhada
@@ -1934,8 +1936,9 @@ async function generatePDF(){
   y += 14;
 
   // ── TÍTULO PROPOSTA ───────────────────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(11); setC(navyDk);
-  doc.text('PROPOSTA COMERCIAL  Nº '+numProp, W/2, y, {align:'center'});
+  y += 3;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); setC(navyDk);
+  doc.text('PROPOSTA  Nº '+numProp, W/2, y, {align:'center'});
   y += 4;
   // Linha decorativa
   setD(teal); doc.setLineWidth(0.8);
@@ -2062,14 +2065,16 @@ async function generatePDF(){
 
   if(y+12 > H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
 
-  // Faixa total — duas partes centradas
-  setF([40,75,115]); doc.roundedRect(mL, y, cW, 11, 2, 2, 'F');
-  setF(teal);        doc.roundedRect(mL, y, cW/2, 11, 2, 2, 'F');
+  // Faixa total — cor uniforme azul claro (igual cabeçalho)
+  setF([52,85,125]); doc.roundedRect(mL, y, cW, 11, 2, 2, 'F');
+  // Divisor sutil no meio
+  setD([80,115,160]); doc.setLineWidth(0.3);
+  doc.line(mL+cW/2, y+2, mL+cW/2, y+9);
   // Label lado esquerdo
   doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(white);
   doc.text('VALOR TOTAL DA PROPOSTA', mL + cW/4, y+7, {align:'center'});
-  // Valor lado direito
-  doc.setFont('helvetica','bold'); doc.setFontSize(13); setC([220,255,235]);
+  // Valor lado direito — mesmo branco
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); setC(white);
   doc.text('R$ '+grand2.toLocaleString('pt-BR',{minimumFractionDigits:2}), mL + cW*3/4, y+7.5, {align:'center'});
   y += 16;
 
@@ -2158,7 +2163,8 @@ async function generatePDF(){
   }
   var orgaoSlug = getOrgaoSlug(orgao);
   var loteSlug  = lote ? '_LOTE-'+lote.replace(/\s+/g,'') : '';
-  var fname     = 'PROPOSTA-N'+numProp+'_'+orgaoSlug+loteSlug+'.pdf';
+  var loteDisplay = lote ? ' - LOTE ' + lote.replace(/\s+/g,'') : '';
+  var fname = numProp + ' - ' + orgaoSlug + loteDisplay + '.pdf';
   doc.save(fname);
   toast('PDF gerado: '+fname,'ok');
 }
@@ -2270,9 +2276,9 @@ function renderHist(){
       '</td>'+
       '<td>'+
         '<div class="hist-acts">'+
-          '<button class="btn-sm btn-sm-b" onclick="editProp('+h.id+')">✏️</button>'+
-          '<button class="btn-sm btn-sm-g" onclick="rePDF('+h.id+')">📄</button>'+
-          '<button class="btn-sm btn-sm-r" onclick="delProp('+h.id+')">🗑️</button>'+
+          '<button class="btn-sm btn-sm-b" title="Editar proposta" onclick="editProp('+h.id+')">✏️</button>'+
+          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF('+h.id+')">🖨️</button>'+
+          '<button class="btn-sm btn-sm-r" title="Excluir proposta" onclick="delProp('+h.id+')">🗑️</button>'+
         '</div>'+
       '</td>';
     tbody.appendChild(tr);
