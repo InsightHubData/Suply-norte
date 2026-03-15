@@ -451,6 +451,40 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
   padding:48px 20px;text-align:center;color:var(--text-sm);font-size:13px;
 }
 
+
+/* ─── MODAL LISTA CLIENTES + EDITAR CLIENTE ─── */
+.cli-modal-ov,.cli-edit-ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  z-index:8600;align-items:center;justify-content:center;padding:20px;
+}
+.cli-modal-ov.open,.cli-edit-ov.open{ display:flex;animation:fadeIn .2s ease; }
+.cli-modal{
+  background:#fff;border-radius:16px;width:100%;max-width:700px;height:80vh;
+  display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.28);overflow:hidden;
+}
+.cli-edit-box{
+  background:#fff;border-radius:16px;width:100%;max-width:520px;
+  max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.28);padding:32px;
+}
+.cli-modal-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 24px;border-bottom:1px solid var(--gray-bd);flex-shrink:0;
+}
+.cli-modal-hd h3{
+  font-family:'Barlow Condensed',sans-serif;font-size:20px;
+  font-weight:800;color:var(--navy-dk);display:flex;align-items:center;gap:8px;
+}
+.cli-modal-search{
+  display:flex;align-items:center;gap:10px;padding:12px 24px;
+  border-bottom:1px solid var(--gray-bd);flex-shrink:0;background:var(--gray-bg);
+}
+.cli-modal-search input{
+  flex:1;padding:9px 14px;border:1.5px solid var(--gray-bd);border-radius:8px;font-size:13px;
+}
+.cli-modal-search input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(42,100,150,.1)}
+.cli-modal-body{ flex:1;overflow-y:auto; }
+
 /* ─── MODAL EDITAR PRODUTO ─── */
 .prod-modal-ov{
   display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
@@ -536,7 +570,9 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .field textarea{resize:vertical;min-height:70px}
 
 .autocomplete-wrap{position:relative}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:7px;z-index:1000;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:7px;z-index:2000;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.autocomplete-wrap{position:relative}
+.items-tbl .autocomplete-list{top:auto;bottom:100%;margin-bottom:2px}
 .autocomplete-list div{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--gray-bd)}
 .autocomplete-list div:last-child{border-bottom:none}
 .autocomplete-list div:hover{background:var(--accent);color:var(--navy)}
@@ -764,7 +800,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
           <div class="row4">
             <div class="field">
               <label>Nº da Proposta</label>
-              <input type="text" id="fNum" placeholder="NC00001" readonly style="background:#e8f4fd;font-weight:700;color:var(--navy)">
+              <input type="text" id="fNum" placeholder="NC00001" style="background:#e8f4fd;font-weight:700;color:var(--navy)">
             </div>
             <div class="field">
               <label>Data de Emissão</label>
@@ -799,19 +835,18 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
         <!-- DESTINATÁRIO -->
         <div class="form-card">
           <h3>🏛️ Destinatário (Órgão / Empresa)</h3>
-          <div class="row2">
-            <div class="field">
-              <label>Nome / Razão Social do Destinatário</label>
-              <div class="autocomplete-wrap" id="acOrgaoWrap">
-                <input type="text" id="fOrgao" placeholder="Ex: FUNDEP" autocomplete="off" oninput="acSearch('fOrgao','clients')">
-                <div class="autocomplete-list" id="fOrgao_list" style="display:none"></div>
-              </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Nome / Razão Social do Destinatário</label>
+            <div class="autocomplete-wrap" id="acOrgaoWrap">
+              <input type="text" id="fOrgao" placeholder="Ex: FUNDEP" autocomplete="off" oninput="acSearch('fOrgao','clients')" style="width:100%">
+              <div class="autocomplete-list" id="fOrgao_list" style="display:none"></div>
             </div>
+          </div>
+          <div class="row2">
             <div class="field">
               <label>CNPJ do Destinatário</label>
               <input type="text" id="fCnpjOrgao" placeholder="00.000.000/0001-00">
             </div>
-          </div>
           <div class="row2" style="margin-top:12px">
             <div class="field">
               <label>Cidade / UF de Entrega</label>
@@ -1165,11 +1200,26 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
             <button class="btn-primary" style="margin-top:14px;padding:10px 20px;font-size:13px" onclick="saveClient()">✅ Salvar Cliente</button>
           </div>
           <div class="cad-list">
-            <div class="cad-list-header">
-              <span>👥 Clientes Cadastrados</span>
-              <span id="cliCount" style="font-size:12px;opacity:.7">0</span>
+            <div class="cad-list-header" style="display:flex;align-items:center;justify-content:space-between">
+              <span style="display:flex;align-items:center;gap:8px">
+                👥 Clientes Cadastrados
+                <span id="cliCount" style="font-size:11px;opacity:.7;font-family:'Barlow',sans-serif;font-weight:400">0</span>
+              </span>
+              <button onclick="openCliListModal()"
+                style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);
+                       color:#fff;border-radius:6px;padding:3px 10px;font-size:11px;
+                       font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;
+                       transition:background .15s"
+                onmouseover="this.style.background='rgba(255,255,255,.3)'"
+                onmouseout="this.style.background='rgba(255,255,255,.18)'">
+                ⛶ Ver todos
+              </button>
             </div>
-            <div id="cliList"><div class="cad-empty">Nenhum cliente cadastrado.</div></div>
+            <div id="cliList"
+              style="max-height:210px;overflow-y:auto;
+                     scrollbar-width:thin;scrollbar-color:var(--gray-bd) transparent">
+              <div class="cad-empty">Nenhum cliente cadastrado.</div>
+            </div>
           </div>
         </div>
 
@@ -1255,6 +1305,59 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
   </div>
 </div>
 
+<!-- ── MODAL LISTA COMPLETA DE CLIENTES ── -->
+<div class="cli-modal-ov" id="cliListModalOv" onclick="closeCliListModal(event)">
+  <div class="cli-modal" id="cliListModalBox">
+    <div class="cli-modal-hd">
+      <h3>👥 Clientes Cadastrados <span id="cliListModalCount"
+        style="font-size:13px;font-weight:400;color:var(--text-sm);margin-left:4px"></span></h3>
+      <button class="prod-modal-close" onclick="closeCliListModal()">✕</button>
+    </div>
+    <div class="cli-modal-search">
+      <input type="text" id="cliListSearch"
+        placeholder="🔍  Buscar por nome, CNPJ ou cidade..."
+        oninput="filterCliListModal(this.value)">
+      <span id="cliListSearchCount" style="font-size:12px;color:var(--text-sm);white-space:nowrap"></span>
+    </div>
+    <div class="cli-modal-body" id="cliListModalBody">
+      <div class="prodlist-modal-empty">Nenhum cliente cadastrado.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL EDITAR CLIENTE ── -->
+<div class="cli-edit-ov" id="cliEditOv" onclick="closeCliEdit(event)">
+  <div class="cli-edit-box" id="cliEditBox">
+    <div class="prod-modal-hd">
+      <h3>✏️ Editar Cliente</h3>
+      <button class="prod-modal-close" onclick="closeCliEdit()">✕</button>
+    </div>
+    <input type="hidden" id="editCliId">
+    <div class="field" style="margin-bottom:14px">
+      <label>Nome / Razão Social</label>
+      <input type="text" id="editCliNome" placeholder="Nome do cliente">
+    </div>
+    <div class="row2" style="margin-bottom:14px">
+      <div class="field">
+        <label>CNPJ</label>
+        <input type="text" id="editCliCnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div class="field">
+        <label>Cidade / UF</label>
+        <input type="text" id="editCliCidade" placeholder="Belo Horizonte / MG">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:20px">
+      <label>Responsável / Contato</label>
+      <input type="text" id="editCliResp" placeholder="Nome do responsável">
+    </div>
+    <div class="btn-row" style="margin-top:4px">
+      <button class="btn-primary btn-green" onclick="saveEditClient()">💾 Salvar Alterações</button>
+      <button class="btn-outline" onclick="closeCliEdit()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MODAL LISTA COMPLETA DE PRODUTOS ── -->
 <div class="prodlist-modal-ov" id="prodListModalOv" onclick="closeProdListModal(event)">
   <div class="prodlist-modal" id="prodListModalBox">
@@ -1293,8 +1396,10 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
     <div class="row2" style="margin-bottom:14px">
       <div class="field">
         <label>Código Interno</label>
-        <input type="text" id="editProdCod" readonly
-          style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px">
+        <input type="text" id="editProdCod"
+          style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px"
+          placeholder="P0001"
+          oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="field">
         <label>Nome do Produto</label>
@@ -1536,12 +1641,10 @@ function addItemRow(data){
           'style="width:100%;margin-bottom:4px;font-size:12.5px;font-weight:600;border-radius:6px;padding:6px 8px" '+
           'oninput="acSearchProdNome('+id+')" autocomplete="off">'+
         '<div class="autocomplete-list" id="inome-list-'+id+'" style="display:none"></div>'+
-        '<textarea style="min-height:38px;resize:vertical;font-size:11px" id="idesc-'+id+'" '+
-          'placeholder="Descrição técnica (editável)...">'+(row.desc||'')+'</textarea>'+
         '<div class="autocomplete-list" id="iprod-list-'+id+'" style="display:none"></div>'+
       '</div>'+
     '</td>'+
-    '<td><textarea style="min-height:54px" id="iobs-'+id+'" placeholder="Observações...">'+(row.obs||'')+'</textarea></td>'+
+    '<td><textarea style="min-height:54px" id="iobs-'+id+'" placeholder="Descrição / Observações do item...">'+(row.obs||row.desc||'')+'</textarea></td>'+
     '<td><input type="text" id="iun-'+id+'" value="'+(row.un||'UN')+'" placeholder="UN" style="width:100%"></td>'+
     '<td><input type="number" id="iqty-'+id+'" value="'+(row.qty||1)+'" min="0" step="any" oninput="recalcRow('+id+')" style="width:100%"></td>'+
     '<td><input type="number" id="iunit-'+id+'" value="'+(row.unit||'')+'" min="0" step="0.01" placeholder="0,00" oninput="recalcRow('+id+')" style="width:100%"></td>'+
@@ -2219,8 +2322,15 @@ function renderCadLists(){
     clients_.forEach(function(c){
       var d=document.createElement('div');
       d.className='cad-item';
-      d.innerHTML='<div><div class="cad-item-name">'+c.nome+'</div><div class="cad-item-sub">CNPJ: '+(c.cnpj||'—')+' | '+(c.cidade||'')+'</div></div>'+
-        '<button class="btn-sm btn-sm-r" onclick="delClient('+c.id+')">✕</button>';
+      d.innerHTML=
+        '<div style="flex:1;min-width:0">'+
+          '<div class="cad-item-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.nome+'</div>'+
+          '<div class="cad-item-sub">CNPJ: '+(c.cnpj||'—')+(c.cidade?' | '+c.cidade:'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:5px;flex-shrink:0">'+
+          '<button class="btn-sm btn-sm-b" onclick="openEditClient('+c.id+')">✏️</button>'+
+          '<button class="btn-sm btn-sm-r" onclick="delClient('+c.id+')">✕</button>'+
+        '</div>';
       cliDiv.appendChild(d);
     });
   }
@@ -2256,8 +2366,8 @@ function renderCadLists(){
   }
 }
 
-function delClient(id){ clients_=clients_.filter(function(c){ return c.id!==id; }); saveLSCli(); renderCadLists(); }
-function delProduct(id){ products_=products_.filter(function(p){ return p.id!==id; }); saveLSProd(); renderCadLists(); }
+function delClient(id){ if(!confirm('Excluir este cliente?')) return; clients_=clients_.filter(function(c){ return c.id!==id; }); saveLSCli(); renderCadLists(); }
+function delProduct(id){ if(!confirm('Excluir este produto?')) return; products_=products_.filter(function(p){ return p.id!==id; }); saveLSProd(); renderCadLists(); }
 
 /* ══════════════════════════════════════════
    INATIVIDADE
@@ -2632,15 +2742,24 @@ function clearEditProdImg(){
 function saveEditProduct(){
   var id   = parseInt(document.getElementById('editProdId').value);
   var nome = (document.getElementById('editProdNome').value||'').trim();
+  var cod  = (document.getElementById('editProdCod').value||'').trim().toUpperCase();
   if(!nome){ toast('Informe o nome do produto.','err'); return; }
+  if(!cod) { toast('Informe o código do produto.','err'); return; }
 
   var idx = products_.findIndex(function(x){ return x.id===id; });
   if(idx < 0){ toast('Produto não encontrado.','err'); return; }
 
-  // mantém cod e id originais, atualiza o resto
+  // verifica duplicata de código (ignora o próprio produto)
+  var duplicate = products_.findIndex(function(x){ return x.id!==id && (x.cod||'').toUpperCase()===cod; });
+  if(duplicate >= 0){
+    toast('Código "'+cod+'" já existe em outro produto ('+products_[duplicate].nome+').','err');
+    return;
+  }
+
+  // salva com novo código
   products_[idx] = {
     id:    products_[idx].id,
-    cod:   products_[idx].cod,
+    cod:   cod,
     nome:  nome,
     desc:  (document.getElementById('editProdDesc').value||'').trim(),
     un:    (document.getElementById('editProdUn').value||'').trim(),
@@ -2730,6 +2849,103 @@ function delFromModal(id){
   products_ = products_.filter(function(p){ return p.id!==id; });
   saveLSProd(); renderCadLists();
   renderProdListModal(document.getElementById('prodListSearch').value);
+}
+
+// ══════════════════════════════════════════
+//  MODAL LISTA + EDITAR CLIENTE
+// ══════════════════════════════════════════
+function buildCliListItem(c){
+  var d = document.createElement('div');
+  d.className = 'cad-item';
+  d.dataset.search = (c.nome+' '+(c.cnpj||'')+' '+(c.cidade||'')).toLowerCase();
+  d.innerHTML =
+    '<div style="flex:1;min-width:0">'+
+      '<div class="cad-item-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+c.nome+'</div>'+
+      '<div class="cad-item-sub">CNPJ: '+(c.cnpj||'—')+(c.cidade?' | '+c.cidade:'')+(c.resp?' | '+c.resp:'')+'</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">'+
+      '<button class="btn-sm btn-sm-b" title="Editar" onclick="openEditFromCliModal('+c.id+')">✏️</button>'+
+      '<button class="btn-sm btn-sm-r" title="Excluir" onclick="delFromCliModal('+c.id+')">✕</button>'+
+    '</div>';
+  return d;
+}
+
+function renderCliListModal(filter){
+  var body = document.getElementById('cliListModalBody');
+  var q = (filter||'').toLowerCase().trim();
+  var list = q
+    ? clients_.filter(function(c){ return (c.nome+' '+(c.cnpj||'')+' '+(c.cidade||'')).toLowerCase().includes(q); })
+    : clients_;
+  document.getElementById('cliListModalCount').textContent =
+    '('+clients_.length+' cliente'+(clients_.length!==1?'s':'')+')';
+  document.getElementById('cliListSearchCount').textContent =
+    q ? list.length+' resultado'+(list.length!==1?'s':'') : '';
+  body.innerHTML='';
+  if(!list.length){
+    body.innerHTML='<div class="prodlist-modal-empty">'+(q?'Nenhum cliente encontrado para "'+q+'".':'Nenhum cliente cadastrado.')+'</div>';
+    return;
+  }
+  list.forEach(function(c){ body.appendChild(buildCliListItem(c)); });
+}
+
+function openCliListModal(){
+  document.getElementById('cliListSearch').value='';
+  renderCliListModal();
+  document.getElementById('cliListModalOv').classList.add('open');
+  setTimeout(function(){ document.getElementById('cliListSearch').focus(); },120);
+}
+
+function closeCliListModal(e){
+  if(e && e.target!==document.getElementById('cliListModalOv')) return;
+  document.getElementById('cliListModalOv').classList.remove('open');
+}
+
+function filterCliListModal(val){ renderCliListModal(val); }
+
+function openEditFromCliModal(id){
+  document.getElementById('cliListModalOv').classList.remove('open');
+  openEditClient(id);
+}
+
+function delFromCliModal(id){
+  if(!confirm('Excluir este cliente?')) return;
+  clients_ = clients_.filter(function(c){ return c.id!==id; });
+  saveLSCli(); renderCadLists();
+  renderCliListModal(document.getElementById('cliListSearch').value);
+}
+
+function openEditClient(id){
+  var c = clients_.find(function(x){ return x.id===id; });
+  if(!c){ toast('Cliente não encontrado.','err'); return; }
+  document.getElementById('editCliId').value    = id;
+  document.getElementById('editCliNome').value  = c.nome||'';
+  document.getElementById('editCliCnpj').value  = c.cnpj||'';
+  document.getElementById('editCliCidade').value= c.cidade||'';
+  document.getElementById('editCliResp').value  = c.resp||'';
+  document.getElementById('cliEditOv').classList.add('open');
+}
+
+function closeCliEdit(e){
+  if(e && e.target!==document.getElementById('cliEditOv')) return;
+  document.getElementById('cliEditOv').classList.remove('open');
+}
+
+function saveEditClient(){
+  var id   = parseInt(document.getElementById('editCliId').value);
+  var nome = (document.getElementById('editCliNome').value||'').trim();
+  if(!nome){ toast('Informe o nome do cliente.','err'); return; }
+  var idx = clients_.findIndex(function(x){ return x.id===id; });
+  if(idx<0){ toast('Cliente não encontrado.','err'); return; }
+  clients_[idx] = {
+    id:   clients_[idx].id,
+    nome: nome,
+    cnpj: (document.getElementById('editCliCnpj').value||'').trim(),
+    cidade:(document.getElementById('editCliCidade').value||'').trim(),
+    resp: (document.getElementById('editCliResp').value||'').trim()
+  };
+  saveLSCli(); renderCadLists();
+  document.getElementById('cliEditOv').classList.remove('open');
+  toast('Cliente '+nome+' atualizado!','ok');
 }
 </script>
 </body>
