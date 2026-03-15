@@ -572,7 +572,6 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 .autocomplete-wrap{position:relative}
 .autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--blue);border-radius:7px;z-index:2000;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.15)}
 .autocomplete-wrap{position:relative}
-.items-tbl .autocomplete-list{top:auto;bottom:100%;margin-bottom:2px}
 .autocomplete-list div{padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--gray-bd)}
 .autocomplete-list div:last-child{border-bottom:none}
 .autocomplete-list div:hover{background:var(--accent);color:var(--navy)}
@@ -1302,9 +1301,6 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
       </div>
     </div>
 
-  </div>
-</div>
-
 <!-- ── MODAL LISTA COMPLETA DE CLIENTES ── -->
 <div class="cli-modal-ov" id="cliListModalOv" onclick="closeCliListModal(event)">
   <div class="cli-modal" id="cliListModalBox">
@@ -1461,6 +1457,8 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
 </div>
 
 
+</div>
+</div>
 <script>
 /* ══════════════════════════════════════════
    DADOS FIXOS DA EMPRESA
@@ -2948,5 +2946,6 @@ function saveEditClient(){
   toast('Cliente '+nome+' atualizado!','ok');
 }
 </script>
+</div>
 </body>
 </html>
