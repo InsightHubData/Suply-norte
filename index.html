@@ -1892,7 +1892,7 @@ async function generatePDF(){
 
   // ── CABEÇALHO HEADER BAR ─────────────────────────────────
   // Barra gradiente navy com nome da empresa
-  setF(navyDk); doc.rect(0,0,W,22,'F');
+  setF([52,85,125]); doc.rect(0,0,W,22,'F');
   // Faixa de destaque lateral esquerda (teal)
   setF(teal); doc.rect(0,0,4,22,'F');
 
@@ -1911,7 +1911,7 @@ async function generatePDF(){
   doc.setFontSize(7);
   setC([200,220,230]);
   doc.text('CNPJ: '+EMPRESA.cnpj, W-mR, 8, {align:'right'});
-  doc.text('I.E.: '+EMPRESA.ie, W-mR, 13, {align:'right'});
+  doc.text('Ins. Estadual: '+EMPRESA.ie, W-mR, 13, {align:'right'});
   doc.text(EMPRESA.cidade+' — MG', W-mR, 18, {align:'right'});
   y = 27;
 
@@ -1934,24 +1934,26 @@ async function generatePDF(){
   y += 14;
 
   // ── TÍTULO PROPOSTA ───────────────────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(15); setC(navyDk);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); setC(navyDk);
   doc.text('PROPOSTA COMERCIAL  Nº '+numProp, W/2, y, {align:'center'});
-  y += 5;
-  // Linha decorativa dupla
-  setD(teal); doc.setLineWidth(1.2);
+  y += 4;
+  // Linha decorativa
+  setD(teal); doc.setLineWidth(0.8);
   doc.line(mL+20, y, W-mR-20, y);
-  setD(grayBd); doc.setLineWidth(0.3);
-  doc.line(mL+22, y+1.5, W-mR-22, y+1.5);
   y += 5;
 
-  // Pregão/lote numa faixa
+  // Lote em destaque + pregão menor
   var pregao = document.getElementById('fPregao').value||'';
-  if(pregao||lote){
-    setF(gray); doc.roundedRect(mL,y,cW,7,2,2,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navy);
-    var refTxt = (pregao||'')+(lote?' — LOTE '+lote:'');
-    doc.text(refTxt, W/2, y+4.5, {align:'center'});
-    y += 11;
+  if(lote||pregao){
+    setF(gray); doc.roundedRect(mL,y,cW,9,2,2,'F');
+    if(lote){
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); setC(navy);
+      doc.text('LOTE: '+lote, W/2, y+6, {align:'center'});
+    } else {
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(textSm);
+      doc.text(pregao, W/2, y+6, {align:'center'});
+    }
+    y += 13;
   }
   y += 2;
 
@@ -2018,11 +2020,8 @@ async function generatePDF(){
       doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
       doc.text(nomeLines, descX+1, dy);
       dy += nomeLines.length*5 + 1;
-      // Linha separadora fina abaixo do nome
-      if(descLines.length>0){
-        setD([180,200,220]); doc.setLineWidth(0.2);
-        doc.line(descX, dy-1, descX+colW.desc-8, dy-1);
-      }
+      // Espaço extra entre nome e descrição (sem linha)
+      if(descLines.length>0){ dy += 1; }
     }
 
     // Descrição — texto menor, cor secundária
@@ -2063,13 +2062,15 @@ async function generatePDF(){
 
   if(y+12 > H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
 
-  // Faixa total
-  setF(navyDk); doc.roundedRect(mL, y, cW, 10, 2, 2, 'F');
-  setF(teal);   doc.rect(mL, y, 3, 10, 'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); setC(white);
-  doc.text('VALOR TOTAL DA PROPOSTA', mL+8, y+6.5);
-  doc.setFont('helvetica','bold'); doc.setFontSize(12); setC([120,255,180]);
-  doc.text('R$ '+grand2.toLocaleString('pt-BR',{minimumFractionDigits:2}), W-mR, y+6.5, {align:'right'});
+  // Faixa total — duas partes centradas
+  setF([40,75,115]); doc.roundedRect(mL, y, cW, 11, 2, 2, 'F');
+  setF(teal);        doc.roundedRect(mL, y, cW/2, 11, 2, 2, 'F');
+  // Label lado esquerdo
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(white);
+  doc.text('VALOR TOTAL DA PROPOSTA', mL + cW/4, y+7, {align:'center'});
+  // Valor lado direito
+  doc.setFont('helvetica','bold'); doc.setFontSize(13); setC([220,255,235]);
+  doc.text('R$ '+grand2.toLocaleString('pt-BR',{minimumFractionDigits:2}), mL + cW*3/4, y+7.5, {align:'center'});
   y += 16;
 
   // ── CONDIÇÕES DE FORNECIMENTO ─────────────────────────────
@@ -2157,7 +2158,7 @@ async function generatePDF(){
   }
   var orgaoSlug = getOrgaoSlug(orgao);
   var loteSlug  = lote ? '_LOTE-'+lote.replace(/\s+/g,'') : '';
-  var fname     = 'PROPOSTA_'+numProp+'_'+orgaoSlug+loteSlug+'.pdf';
+  var fname     = 'PROPOSTA-N'+numProp+'_'+orgaoSlug+loteSlug+'.pdf';
   doc.save(fname);
   toast('PDF gerado: '+fname,'ok');
 }
