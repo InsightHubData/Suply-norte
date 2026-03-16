@@ -1173,6 +1173,30 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
     <div class="panel" id="tabCad">
       <div class="sec-title">🗂️ Cadastros</div>
       <div class="sec-sub">Cadastre clientes e produtos para preenchimento automático nas propostas.</div>
+
+      <!-- ── BACKUP / RESTAURAR ── -->
+      <div class="form-card" style="margin-bottom:22px;border:1.5px solid var(--teal)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:20px">🛡️</span>
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--navy-dk)">Backup dos Dados</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-sm)">Exporte clientes e produtos para um arquivo seguro. Importe para restaurar em qualquer computador.</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-primary btn-green" onclick="exportBackup()" style="padding:10px 18px;font-size:13px;display:flex;align-items:center;gap:7px">
+              💾 Exportar Backup
+            </button>
+            <label class="btn-outline" style="padding:10px 18px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.8px;text-transform:uppercase;border:1.5px solid var(--gray-bd);color:var(--navy);transition:all .2s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='var(--gray-bd)';this.style.color='var(--navy)'">
+              📂 Importar Backup
+              <input type="file" id="backupFileInput" accept=".json" style="display:none" onchange="importBackup(this)">
+            </label>
+          </div>
+        </div>
+        <div id="backupStatus" style="margin-top:10px;font-size:12px;color:var(--teal);display:none"></div>
+      </div>
+
       <div class="cad-grid">
 
         <!-- CLIENTES -->
@@ -3017,6 +3041,91 @@ function saveEditClient(){
   saveLSCli(); renderCadLists();
   document.getElementById('cliEditOv').classList.remove('open');
   toast('Cliente '+nome+' atualizado!','ok');
+}
+
+// ══════════════════════════════════════════
+//  BACKUP — EXPORTAR / IMPORTAR
+// ══════════════════════════════════════════
+function exportBackup(){
+  var backup = {
+    versao:   '1.0',
+    geradoEm: new Date().toLocaleString('pt-BR'),
+    produtos: products_,
+    clientes: clients_,
+    prodSeq:  parseInt(localStorage.getItem('sn_prod_seq')||'1'),
+    propSeq:  parseInt(localStorage.getItem('sn_seq')||'327'),
+    pedSeq:   parseInt(localStorage.getItem('sn_ped_seq')||'1')
+  };
+  var json = JSON.stringify(backup, null, 2);
+  var blob = new Blob([json], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var now  = new Date();
+  var stamp = now.getFullYear() +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0') + '_' +
+    String(now.getHours()).padStart(2,'0') +
+    String(now.getMinutes()).padStart(2,'0');
+  a.href     = url;
+  a.download = 'SupplyNorte_Backup_' + stamp + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  var st = document.getElementById('backupStatus');
+  if(st){
+    st.style.display = 'block';
+    st.style.color   = 'var(--teal)';
+    st.innerHTML     = '&#10003; Backup exportado em ' + now.toLocaleString('pt-BR') +
+                       ' &mdash; ' + products_.length + ' produto(s) e ' +
+                       clients_.length + ' cliente(s) salvos.';
+  }
+  toast('Backup exportado com sucesso!','ok');
+}
+
+function importBackup(input){
+  var file = input.files[0];
+  if(!file){ return; }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(!data.produtos && !data.clientes){
+        toast('Arquivo invalido.','err');
+        return;
+      }
+      var nprod = (data.produtos||[]).length;
+      var ncli  = (data.clientes||[]).length;
+      var msg   = 'Importar backup de: ' + (data.geradoEm||'?') +
+                  '\n\n' + nprod + ' produto(s) e ' + ncli + ' cliente(s)' +
+                  '\n\nATENCAO: os dados atuais serao substituidos. Continuar?';
+      if(!confirm(msg)){ input.value=''; return; }
+      if(data.produtos && data.produtos.length > 0){
+        products_ = data.produtos;
+        localStorage.setItem('sn_prod', JSON.stringify(products_));
+      }
+      if(data.clientes && data.clientes.length > 0){
+        clients_ = data.clientes;
+        localStorage.setItem('sn_cli', JSON.stringify(clients_));
+      }
+      if(data.prodSeq) localStorage.setItem('sn_prod_seq', data.prodSeq);
+      if(data.propSeq) localStorage.setItem('sn_seq',      data.propSeq);
+      if(data.pedSeq)  localStorage.setItem('sn_ped_seq',  data.pedSeq);
+      renderCadLists();
+      initProdCodField();
+      input.value = '';
+      var st = document.getElementById('backupStatus');
+      if(st){
+        st.style.display = 'block';
+        st.style.color   = 'var(--teal)';
+        st.innerHTML     = '&#10003; Backup importado &mdash; ' + nprod +
+                           ' produto(s) e ' + ncli + ' cliente(s) restaurados. (Backup de: ' +
+                           (data.geradoEm||'?') + ')';
+      }
+      toast('Importado! ' + nprod + ' produtos e ' + ncli + ' clientes.','ok');
+    } catch(err){
+      toast('Erro ao ler o arquivo: ' + err.message,'err');
+    }
+  };
+  reader.readAsText(file);
 }
 </script>
 </body>
