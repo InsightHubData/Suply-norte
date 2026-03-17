@@ -1027,7 +1027,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
             <label>Nome / Razão Social</label>
             <input type="text" id="pedOrgao" placeholder="Nome do cliente">
           </div>
-          <div class="row3" style="margin-bottom:12px">
+          <div class="row2" style="margin-bottom:12px">
             <div class="field">
               <label>CNPJ</label>
               <input type="text" id="pedCnpjOrgao" placeholder="00.000.000/0001-00">
@@ -1036,13 +1036,9 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
               <label>Inscr. Estadual</label>
               <input type="text" id="pedIEOrgao" placeholder="Ex: NÃO CONTRIBUINTE">
             </div>
-            <div class="field">
-              <label>Cidade / UF</label>
-              <input type="text" id="pedCidadeOrgao" placeholder="Belo Horizonte / MG">
-            </div>
           </div>
           <div class="field">
-            <label>Endereço Completo</label>
+            <label>Endereço de Entrega</label>
             <input type="text" id="pedEnderecoOrgao" placeholder="Av. Antonio Carlos, 6627 - CEP 31270901 - Belo Horizonte MG">
           </div>
         </div>
@@ -2239,6 +2235,7 @@ function getFormData(){
     lote:     document.getElementById('fLote').value,
     modalidade: document.getElementById('fModalidade').value,
     cnpjOrgao: document.getElementById('fCnpjOrgao').value,
+    respOrgao: document.getElementById('fRespOrgao').value,
     cidadeOrgao: document.getElementById('fCidadeOrgao').value,
     respOrgao: document.getElementById('fRespOrgao').value,
     vendedor:  document.getElementById('fVendedor').value,
@@ -2522,11 +2519,11 @@ function toast(msg,type){
 // ══════════════════════════════════════════
 //  PEDIDO DE VENDA
 // ══════════════════════════════════════════
-var pedSeq_ = parseInt(localStorage.getItem('sn_ped_seq') || '1');
+var pedSeq_ = parseInt(localStorage.getItem('sn_ped_seq') || '91');
 var pedidos_ = [];
 try { pedidos_ = JSON.parse(localStorage.getItem('sn_pedidos') || '[]'); } catch(e){ pedidos_=[]; }
 
-function pedNumFmt(n){ return 'PV' + String(n).padStart('00001'.length,0); }
+function pedNumFmt(n){ return String(n).padStart(4,'0'); } // formato: 0091
 
 function buscarCotacao(){
   var num = document.getElementById('pedSearch').value.trim().toUpperCase();
@@ -2547,14 +2544,21 @@ function preencherPedForm(cot){
   document.getElementById('pedLote').value         = cot.lote||'';
   document.getElementById('pedOrgao').value        = cot.orgao||'';
   document.getElementById('pedCnpjOrgao').value    = cot.cnpjOrgao||'';
-  document.getElementById('pedCidadeOrgao').value  = cot.cidadeOrgao||'';
   document.getElementById('pedIEOrgao').value      = '';
   document.getElementById('pedEnderecoOrgao').value= cot.cidadeOrgao||'';
   document.getElementById('pedVendedor').value     = cot.vendedor||'';
   document.getElementById('pedTel').value          = cot.tel||'';
   document.getElementById('pedEmail').value        = cot.email||'comercial@supplynorte.com.br';
-  document.getElementById('pedObs').value          =
-    (cot.local ? 'Local de Entrega: ' + cot.local : '');
+  // Endereço = campo cidadeOrgao (endereço completo cadastrado)
+  var obsEnderecoStr = cot.cidadeOrgao || cot.enderecoOrgao || '';
+  var obsRespStr     = cot.respOrgao || '';
+  // Preencher campo Endereço Completo com o endereço do cliente
+  var endEl = document.getElementById('pedEnderecoOrgao');
+  if(endEl) endEl.value = obsEnderecoStr;
+  var obsArr = [];
+  if(obsEnderecoStr) obsArr.push('Local de Entrega: ' + obsEnderecoStr);
+  if(obsRespStr)     obsArr.push('A/C: ' + obsRespStr);
+  document.getElementById('pedObs').value = obsArr.join('\n');
   document.getElementById('pedDesconto').value     = cot.desconto||0;
 
   // Helper local para escapar aspas em values de input
@@ -2639,7 +2643,6 @@ function getPedData(){
     orgao:         g('pedOrgao'),
     cnpjOrgao:     g('pedCnpjOrgao'),
     ieOrgao:       g('pedIEOrgao'),
-    cidadeOrgao:   g('pedCidadeOrgao'),
     enderecoOrgao: g('pedEnderecoOrgao'),
     transportador: g('pedTransportador'),
     frete:         g('pedFrete'),
@@ -2700,198 +2703,204 @@ function limparPedido(){
 
 function gerarPdfPedido(){
   var d = getPedData();
-  if(!d.num||!d.orgao){ toast('Preencha ao menos Nº e Destinatário.','err'); return; }
+  if(!d.num||!d.orgao){ toast('Preencha ao menos No e Destinatario.','err'); return; }
   var jsPDFLib = window.jspdf;
   var doc = new jsPDFLib.jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var W=210, H=297, mL=14, mR=14, mT=14;
   var cW=W-mL-mR;
   var y=mT;
-  var navy  =[26,58,92],  navyDk=[15,37,64], teal=[26,127,110];
-  var white =[255,255,255],gray=[240,244,248],grayBd=[180,200,218];
-  var text_ =[30,45,61],  textSm=[74,99,122];
+  var navy=[26,58,92], navyDk=[15,37,64], teal=[26,127,110];
+  var white=[255,255,255], gray=[240,244,248], grayBd=[180,200,218];
+  var text_=[30,45,61], textSm=[74,99,122];
   function setC(a){ doc.setTextColor(a[0],a[1],a[2]); }
   function setF(a){ doc.setFillColor(a[0],a[1],a[2]); }
   function setD(a){ doc.setDrawColor(a[0],a[1],a[2]); }
-  function fBRLp(v){ return 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+  function fBp(v){ return 'R$'+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
 
-  // ── Cabeçalho ──────────────────────────────────────────
+  // CABECALHO
   setF([52,85,125]); doc.rect(0,0,W,22,'F');
   setF(teal); doc.rect(0,0,4,22,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(white);
   doc.text(EMPRESA.razao, 10, 11);
   doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC([200,225,235]);
-  doc.text('Soluções Científicas e Produtos Laboratoriais', 10, 16.5);
+  doc.text('Solucoes Cientificas e Produtos Laboratoriais', 10, 16.5);
   doc.setFontSize(8); setC([215,232,242]);
   doc.text('CNPJ: '+EMPRESA.cnpj, W-mR, 8.5, {align:'right'});
   doc.text('Ins. Estadual: '+EMPRESA.ie, W-mR, 13.5, {align:'right'});
-  doc.text(EMPRESA.cidade+' — MG', W-mR, 18.5, {align:'right'});
+  doc.text(EMPRESA.cidade+' - MG', W-mR, 18.5, {align:'right'});
   y = 28;
 
-  // ── Título Pedido ──────────────────────────────────────
+  // TITULO
   y += 2;
   doc.setFont('helvetica','bold'); doc.setFontSize(13); setC(navyDk);
-  doc.text('PEDIDO  Nº '+d.num, W/2, y, {align:'center'});
+  doc.text('PEDIDO  No '+d.num, W/2, y, {align:'center'});
   y += 4;
   setD(teal); doc.setLineWidth(0.8);
   doc.line(mL+20, y, W-mR-20, y);
-  y += 6;
+  y += 7;
 
-  // ── Bloco cliente ──────────────────────────────────────
-  setF([235,245,255]); doc.roundedRect(mL,y,cW,30,2,2,'F');
-  setD([180,200,230]); doc.setLineWidth(0.3); doc.roundedRect(mL,y,cW,30,2,2,'S');
-  setF(teal); doc.rect(mL,y,2,30,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-  doc.text('CLIENTE', mL+5, y+4);
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); setC(text_);
-  doc.text(d.orgao||'—', mL+5, y+10);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(textSm);
-  doc.text('CNPJ: '+(d.cnpjOrgao||'—')+'   Estadual: '+(d.ieOrgao||'NÃO CONTRIBUINTE'), mL+5, y+16);
-  if(d.enderecoOrgao) doc.text('Endereço: '+d.enderecoOrgao, mL+5, y+22);
-  // Box Ordem/Datas à direita
-  var bw=55, bx=W-mR-bw;
-  setF([225,238,252]); doc.roundedRect(bx-2,y,bw+2,30,2,2,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-  doc.text('Ordem de fornecimento', bx, y+4);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
-  doc.text(d.ordemFornec||'—', bx, y+9);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-  doc.text('Data', bx, y+15);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
-  doc.text(d.data?new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR'):'—', bx, y+20);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-  doc.text('Data prevista', bx, y+25);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
-  doc.text(d.dataPrevista?new Date(d.dataPrevista+'T12:00:00').toLocaleDateString('pt-BR'):'—', bx, y+30);
-  y += 34;
+  // CLIENTE + CARDS ORDEM/DATAS
+  var leftW = cW-58, clienteH=34;
+  setF([235,245,255]); doc.roundedRect(mL,y,cW,clienteH,2,2,'F');
+  setD([180,200,230]); doc.setLineWidth(0.3); doc.roundedRect(mL,y,cW,clienteH,2,2,'S');
+  setF(teal); doc.rect(mL,y,2,clienteH,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
+  doc.text('Cliente', mL+5, y+4.5);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(text_);
+  doc.text(doc.splitTextToSize(d.orgao||'--',leftW-8)[0], mL+5, y+10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); setC(textSm);
+  doc.text('CNPJ: '+(d.cnpjOrgao||'--')+'   Estadual: '+(d.ieOrgao||'NAO CONTRIBUINTE'), mL+5, y+16);
+  var endLns=doc.splitTextToSize('Endereco: '+(d.enderecoOrgao||'--'),leftW-8);
+  doc.text(endLns[0]||'', mL+5, y+22);
+  if(endLns[1]) doc.text(endLns[1], mL+5, y+27);
+  setD([180,200,230]); doc.line(mL+leftW+2,y+2,mL+leftW+2,y+clienteH-2);
+  var bx=mL+leftW+5, bw=cW-leftW-8;
+  function drawInfoCard(lbl,val,iy){
+    setF([215,232,248]); doc.roundedRect(bx,iy,bw,9.5,1,1,'F');
+    setD(teal); doc.setLineWidth(0.7); doc.line(bx+0.5,iy+1,bx+0.5,iy+8.5);
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setC(navyDk);
+    doc.text(lbl, bx+3, iy+3.5);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
+    doc.text(String(val||'--'), bx+3, iy+8);
+  }
+  drawInfoCard('Ordem de Fornecimento', d.ordemFornec||'--', y+1);
+  drawInfoCard('Data', d.data?new Date(d.data+'T12:00:00').toLocaleDateString('pt-BR'):'--', y+12);
+  drawInfoCard('Data Prevista', d.dataPrevista?new Date(d.dataPrevista+'T12:00:00').toLocaleDateString('pt-BR'):'--', y+23);
+  y += clienteH+7;
 
-  // ── Tabela itens ───────────────────────────────────────
-  // Linha de referência (proposta/lote)
+  // REFERENCIA
   if(d.cotRef||d.lote){
     setF(gray); doc.roundedRect(mL,y,cW,7,2,2,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navy);
-    var refStr = (d.cotRef||'')+(d.pregao?' - '+d.pregao:'')+(d.lote?' - LOTE '+d.lote:'');
+    var refStr=(d.cotRef||'')+(d.pregao?' - '+d.pregao:'')+(d.lote?' - LOTE '+d.lote:'');
     doc.text(refStr, W/2, y+4.5, {align:'center'});
     y += 10;
   }
 
-  var colW={num:11,nome:88,cod:22,un:16,qtd:16,unit:24,total:23};
-  var tX=mL, tW=colW.num+colW.nome+colW.cod+colW.un+colW.qtd+colW.unit+colW.total;
-  setF(navy); doc.rect(tX,y,tW,7,'F');
-  setF(teal); doc.rect(tX,y+7,tW,0.8,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(white);
-  var cx=tX;
-  [['#',colW.num],['Descrição do Produto',colW.nome],['Código',colW.cod],
-   ['Unid',colW.un],['Quant',colW.qtd],['Valor\nunitário',colW.unit],['Valor\ntotal',colW.total]
-  ].forEach(function(h){
-    doc.text(h[0], cx+h[1]/2, y+4.5, {align:'center'}); cx+=h[1];
-  });
-  y += 7.8;
+  // TITULO ITENS
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(navyDk);
+  doc.text('Itens do pedido de venda', mL, y+5);
+  setD(teal); doc.setLineWidth(0.5);
+  doc.line(mL, y+5.8, mL+doc.getTextWidth('Itens do pedido de venda'), y+5.8);
+  y += 12;
+
+  // TABELA ITENS — largura exata cW sem overflow
+  var totalW=cW;
+  var c={num:10,cod:20,un:13,qtd:13,unit:22,total:22};
+  c.nome = totalW-c.num-c.cod-c.un-c.qtd-c.unit-c.total;
+  var tX=mL;
+  setF(navy); doc.rect(tX,y,totalW,7,'F');
+  setF(teal); doc.rect(tX,y+7,totalW,0.6,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(white);
+  var hx=tX;
+  [['#',c.num],['Descricao do Produto',c.nome],['Codigo',c.cod],
+   ['Unid',c.un],['Quant',c.qtd],['Vlr Unit',c.unit],['Vlr Total',c.total]
+  ].forEach(function(h){ doc.text(h[0],hx+h[1]/2,y+4.5,{align:'center'}); hx+=h[1]; });
+  y+=7.6;
   setD(grayBd); doc.setLineWidth(0.2);
 
   d.items.forEach(function(it,i){
     if(y>H-30){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
-    var bg = i%2===0 ? white : [246,249,252];
-    setF(bg); doc.rect(tX,y,tW,9,'F');
-    setD(grayBd); doc.rect(tX,y,tW,9,'S');
-    var vx=tX+colW.num;
-    [colW.nome,colW.cod,colW.un,colW.qtd,colW.unit].forEach(function(w){ doc.line(vx,y,vx,y+9); vx+=w; });
+    var bg=i%2===0?white:[246,249,252];
+    setF(bg); doc.rect(tX,y,totalW,9,'F');
+    setD(grayBd); doc.rect(tX,y,totalW,9,'S');
+    var vx2=tX+c.num;
+    [c.nome,c.cod,c.un,c.qtd,c.unit].forEach(function(w){ doc.line(vx2,y,vx2,y+9); vx2+=w; });
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
-    doc.text(String(it.num||i+1).padStart(2,'0'), tX+colW.num/2, y+6, {align:'center'});
-    var dx=tX+colW.num+2;
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navyDk);
-    doc.text(doc.splitTextToSize(it.nome||'',colW.nome-4)[0]||'', dx, y+6);
-    dx+=colW.nome;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); setC(textSm);
-    doc.text(it.cod||'', dx+colW.cod/2, y+6, {align:'center'});
-    dx+=colW.cod;
-    doc.text(it.un||'UN', dx+colW.un/2, y+6, {align:'center'});
-    dx+=colW.un;
+    doc.text(String(it.num||i+1).padStart(2,'0'), tX+c.num/2, y+6, {align:'center'});
+    var dx2=tX+c.num+1;
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
+    doc.text(doc.splitTextToSize(it.nome||'',c.nome-2)[0]||'', dx2, y+6); dx2+=c.nome;
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); setC(textSm);
+    doc.text(it.cod||'', dx2+c.cod/2, y+6, {align:'center'}); dx2+=c.cod;
+    doc.text(it.un||'UN', dx2+c.un/2, y+6, {align:'center'}); dx2+=c.un;
     doc.setFont('helvetica','bold'); setC(text_);
-    doc.text(String(it.qty||0), dx+colW.qtd/2, y+6, {align:'center'});
-    dx+=colW.qtd;
+    doc.text(String(it.qty||0), dx2+c.qtd/2, y+6, {align:'center'}); dx2+=c.qtd;
     doc.setFont('helvetica','normal'); setC(text_);
-    doc.text(fBRLp(it.unit), dx+colW.unit/2, y+6, {align:'center'});
-    dx+=colW.unit;
+    doc.text(fBp(it.unit), dx2+c.unit/2, y+6, {align:'center'}); dx2+=c.unit;
     setC(teal); doc.setFont('helvetica','bold');
-    doc.text(fBRLp(it.total), dx+colW.total/2, y+6, {align:'center'});
+    doc.text(fBp(it.total), dx2+c.total/2, y+6, {align:'center'});
     y+=9;
   });
-  y+=4;
+  y+=6;
 
-  // ── Totais ─────────────────────────────────────────────
-  if(y+20>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
-  var nItens=d.items.length, somaQtd=d.items.reduce(function(a,i){return a+i.qty;},0);
-  setF([235,243,252]); doc.roundedRect(mL+cW/2,y,cW/2,22,2,2,'F');
-  setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL+cW/2,y,cW/2,22,2,2,'S');
-  doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navyDk);
-  var rx=mL+cW/2+3, ry=y+5;
-  doc.text('Nº de itens', rx, ry);        doc.setFont('helvetica','normal'); setC(text_); doc.text(String(nItens), W-mR-3, ry, {align:'right'});
-  doc.setFont('helvetica','bold'); setC(navyDk);
-  doc.text('Soma das Qtdes', rx, ry+5);   doc.setFont('helvetica','normal'); setC(text_); doc.text(String(somaQtd), W-mR-3, ry+5, {align:'right'});
-  doc.setFont('helvetica','bold'); setC(navyDk);
-  doc.text('Total de produtos', rx, ry+10); doc.setFont('helvetica','normal'); setC(text_); doc.text(fBRLp(d.subtotal), W-mR-3, ry+10, {align:'right'});
-  doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(teal);
-  doc.text('Total do pedido', rx, ry+17); doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(fBRLp(d.grand), W-mR-3, ry+17, {align:'right'});
-  y+=28;
+  // TOTAIS — 4 blocos dentro de cW
+  if(y+22>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
+  var nItens=d.items.length, somaQtd=d.items.reduce(function(a,i){return a+(i.qty||0);},0);
+  var totH=22, col4=cW/4;
+  setF([228,240,252]); doc.roundedRect(mL,y,cW,totH,2,2,'F');
+  setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL,y,cW,totH,2,2,'S');
+  [1,2,3].forEach(function(i){ setD([190,210,232]); doc.line(mL+col4*i,y+3,mL+col4*i,y+totH-3); });
+  function totBlock(lbl,val,xi){
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setC(navyDk);
+    doc.text(lbl, xi+col4/2, y+7, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(text_);
+    doc.text(String(val), xi+col4/2, y+17, {align:'center'});
+  }
+  totBlock('No de itens',       String(nItens),  mL);
+  totBlock('Soma das Qtdes',    String(somaQtd), mL+col4);
+  totBlock('Total de produtos', fBp(d.subtotal), mL+col4*2);
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setC(navyDk);
+  doc.text('Total do pedido', mL+col4*3+col4/2, y+7, {align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); setC(teal);
+  doc.text(fBp(d.grand), mL+col4*3+col4/2, y+17, {align:'center'});
+  y += totH+10;
 
-  // ── Transportador ──────────────────────────────────────
-  if(y+16>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
+  // TRANSPORTADOR
+  if(y+18>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
   doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(navyDk);
   doc.text('TRANSPORTADOR', mL, y);
   setD(teal); doc.setLineWidth(0.6);
-  doc.line(mL, y+0.8, mL+doc.getTextWidth('TRANSPORTADOR'), y+0.8);
-  y+=6;
-  setF([235,245,255]); doc.roundedRect(mL,y,cW,11,2,2,'F');
-  setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL,y,cW,11,2,2,'S');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-  doc.text('Nome', mL+3, y+4); doc.text('Modalidade de frete', mL+cW/2+3, y+4);
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
-  doc.text(d.transportador||'MOTORISTA PARTICULAR', mL+3, y+9);
-  var freteMap={CIF:'Contratação do frete por conta do Remetente (CIF)',
-                FOB:'Contratação do frete por conta do Destinatário (FOB)',
+  doc.line(mL,y+0.8,mL+doc.getTextWidth('TRANSPORTADOR'),y+0.8);
+  y+=7;
+  setF([235,245,255]); doc.roundedRect(mL,y,cW,13,2,2,'F');
+  setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL,y,cW,13,2,2,'S');
+  setD([180,200,220]); doc.line(mL+cW/2,y+2,mL+cW/2,y+11);
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
+  doc.text('Nome', mL+3, y+5);
+  doc.text('Modalidade de frete', mL+cW/2+3, y+5);
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
+  doc.text(d.transportador||'MOTORISTA PARTICULAR', mL+3, y+10.5);
+  var freteMap={CIF:'Contratacao do frete por conta do Remetente (CIF)',
+                FOB:'Contratacao do frete por conta do Destinatario (FOB)',
                 'Sem frete':'Sem frete'};
-  doc.text(freteMap[d.frete]||d.frete||'—', mL+cW/2+3, y+9);
-  y+=16;
+  doc.text(freteMap[d.frete]||d.frete||'--', mL+cW/2+3, y+10.5);
+  y += 20;
 
-  // ── Observações ────────────────────────────────────────
-  if(d.obs && d.obs.trim()){
+  // OBSERVACOES
+  var obsText=(d.obs||'').trim();
+  if(!obsText) obsText = d.enderecoOrgao ? 'Local de Entrega: '+d.enderecoOrgao : '';
+  if(obsText){
     if(y+20>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
     doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(navyDk);
-    doc.text('OBSERVAÇÕES', mL, y);
+    doc.text('OBSERVACOES', mL, y);
     setD(teal); doc.setLineWidth(0.6);
-    doc.line(mL, y+0.8, mL+doc.getTextWidth('OBSERVAÇÕES'), y+0.8);
-    y+=6;
-    var obsLines = doc.splitTextToSize(d.obs, cW-6);
-    var obsH = obsLines.length*4.5+8;
+    doc.line(mL,y+0.8,mL+doc.getTextWidth('OBSERVACOES'),y+0.8);
+    y+=8;
+    var obsLns=doc.splitTextToSize(obsText, cW-8);
+    var obsH=Math.max(obsLns.length*5+8,16);
     setF([248,252,248]); doc.roundedRect(mL,y,cW,obsH,2,2,'F');
     setD(teal); doc.setLineWidth(0.3); doc.roundedRect(mL,y,cW,obsH,2,2,'S');
     doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
-    doc.text(obsLines, mL+4, y+5.5);
-    y+=obsH+4;
+    doc.text(obsLns, mL+5, y+6);
+    y+=obsH+6;
   }
 
   addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA);
 
-  // Nome do arquivo
-  // Nome: FUNDEP - OF 31196.25 - P0090.pdf
-  var siglaOrgao = (function(nome){
+  var siglaOrgao=(function(nome){
     if(!nome) return 'pedido';
-    var parts = nome.split('-');
-    var slug  = parts[parts.length-1].trim();
+    var parts=nome.split('-'); var slug=parts[parts.length-1].trim();
     return slug.replace(/[^a-zA-Z0-9 ]/g,'').trim().substring(0,20)||'pedido';
   })(d.orgao);
-  var ofSlug  = d.ordemFornec ? ' - OF ' + d.ordemFornec.trim() : '';
-  var pedSlug = ' - ' + (d.num||'P0000');
-  var fname   = siglaOrgao + ofSlug + pedSlug + '.pdf';
+  var ofSlug  = d.ordemFornec ? ' - OF '+d.ordemFornec.trim() : '';
+  var pedSlug = ' - '+(d.num||'0000');
+  var fname   = siglaOrgao+ofSlug+pedSlug+'.pdf';
   doc.save(fname);
-  // Auto-salvar pedido ao gerar PDF
   salvarPedido();
   renderHist();
-  toast('PDF do Pedido gerado e salvo no histórico!','ok');
+  toast('PDF do Pedido gerado!','ok');
 }
-
-
-// ── Foto no cadastro de produto ──────────────────────────────
 function loadCadProdImg(input){
   var file = input.files[0]; if(!file) return;
   var reader = new FileReader();
