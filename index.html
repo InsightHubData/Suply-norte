@@ -970,7 +970,10 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
           <div class="field">
             <label>Nº da Proposta / Cotação</label>
             <div style="display:flex;gap:8px">
-              <input type="text" id="pedSearch" placeholder="Ex: NC00328" style="text-transform:uppercase">
+              <div class="autocomplete-wrap" style="flex:1">
+                <input type="text" id="pedSearch" placeholder="Ex: NC00328 ou nome do cliente..." style="text-transform:uppercase;width:100%" oninput="acSearchProposta()" autocomplete="off">
+                <div class="autocomplete-list" id="pedSearch_list" style="display:none"></div>
+              </div>
               <button class="btn-primary" style="white-space:nowrap;padding:10px 18px;font-size:13px" onclick="buscarCotacao()">🔍 Buscar</button>
             </div>
           </div>
@@ -2129,18 +2132,17 @@ async function generatePDF(){
     if(y>H-28){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
     function drawCond(kv, xOff){
       if(!kv) return;
-      setF([230,240,250]); doc.roundedRect(xOff, y-1, cW/2-3, 6, 1, 1, 'F');
+      setF([230,240,250]); doc.roundedRect(xOff, y-1, cW/2-3, 9, 1, 1, 'F');
       setD(teal); doc.setLineWidth(0.8);
-      doc.line(xOff, y+2.5, xOff, y-1+6);
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
+      doc.line(xOff, y+0, xOff, y-1+9);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
       doc.text(kv[0], xOff+3, y+3);
-      doc.setFont('helvetica','normal'); setC(text_);
-      var kw=doc.getTextWidth(kv[0]);
-      doc.text(kv[1]||'—', xOff+3+kw+1, y+3);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
+      doc.text(kv[1]||'—', xOff+3, y+7.5);
     }
     drawCond(colA[r], mL);
     drawCond(colB[r], mL+cW/2+2);
-    y += 8;
+    y += 12;
   }
   y += 6;
 
@@ -2161,7 +2163,7 @@ async function generatePDF(){
   doc.text('Fone: '+telefone+'   |   '+email, W/2, y, {align:'center'});
   y += 4;
   doc.setFont('helvetica','italic'); doc.setFontSize(7.5); setC(teal);
-  doc.text('Representante Comercial — Supply Norte', W/2, y, {align:'center'});
+  doc.text('Representante Comercial — Nicoly Cristina', W/2, y, {align:'center'});
   y += 10;
 
   // ── RODAPÉ DE AGRADECIMENTO ───────────────────────────────
@@ -2191,7 +2193,17 @@ async function generatePDF(){
   var loteDisplay = lote ? ' - LOTE ' + lote.replace(/\s+/g,'') : '';
   var fname = numProp + ' - ' + orgaoSlug + loteDisplay + '.pdf';
   doc.save(fname);
-  toast('PDF gerado: '+fname,'ok');
+  // Auto-salvar no histórico ao gerar PDF
+  var autoSaveData = getFormData();
+  if(autoSaveData.num && autoSaveData.orgao){
+    var hiIdx = history_.findIndex(function(h){ return h.id===autoSaveData.id; });
+    if(hiIdx>=0) history_[hiIdx]=autoSaveData; else history_.unshift(autoSaveData);
+    if(hiIdx<0) nextProposalNum(true);
+    saveLS();
+    editingId=null;
+    renderHist();
+  }
+  toast('PDF gerado e proposta salva no histórico!','ok');
 }
 
 function addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA){
@@ -2880,7 +2892,10 @@ function gerarPdfPedido(){
   var pedSlug = ' - ' + (d.num||'P0000');
   var fname   = siglaOrgao + ofSlug + pedSlug + '.pdf';
   doc.save(fname);
-  toast('PDF do Pedido gerado!','ok');
+  // Auto-salvar pedido ao gerar PDF
+  salvarPedido();
+  renderHist();
+  toast('PDF do Pedido gerado e salvo no histórico!','ok');
 }
 
 
@@ -3260,6 +3275,40 @@ function importBackup(input){
     }
   };
   reader.readAsText(file);
+}
+
+// Autocomplete de propostas no campo de busca do Pedido de Venda
+function acSearchProposta(){
+  var val = (document.getElementById('pedSearch').value||'').trim().toUpperCase();
+  var list = document.getElementById('pedSearch_list');
+  if(!val||val.length<1){ list.style.display='none'; return; }
+  // filtra propostas (tipo != pedido) no histórico
+  var filtered = history_.filter(function(h){
+    return h.tipo!=='pedido' &&
+      ((h.num||'').toUpperCase().includes(val) ||
+       (h.orgao||'').toUpperCase().includes(val) ||
+       (h.lote||'').toUpperCase().includes(val));
+  });
+  if(!filtered.length){ list.style.display='none'; return; }
+  list.innerHTML='';
+  filtered.slice(0,8).forEach(function(h){
+    var d = document.createElement('div');
+    d.innerHTML =
+      '<div class="ac-label"><span style="color:var(--teal);font-weight:700">'+h.num+'</span>'
+      +' — '+(h.orgao||'')+'</div>'
+      +'<div class="ac-sub">'+(h.lote?'Lote '+h.lote+' | ':'')+
+        (h.data?new Date(h.data+'T12:00:00').toLocaleDateString('pt-BR'):'')+'</div>';
+    d.onclick = function(){
+      document.getElementById('pedSearch').value = h.num;
+      list.style.display='none';
+      preencherPedForm(h);
+      document.getElementById('pedStatus').innerHTML =
+        '<span style="color:var(--teal);font-weight:700">✅ Proposta <b>'+h.num+'</b> carregada.</span>';
+      document.getElementById('pedForm').style.display='block';
+    };
+    list.appendChild(d);
+  });
+  list.style.display='block';
 }
 </script>
 </body>
