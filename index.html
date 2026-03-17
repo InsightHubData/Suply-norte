@@ -533,8 +533,8 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
   min-height:52px;
 }
 .hd-left{display:flex;align-items:stretch;gap:0}
-.hd-logo-wrap{background:#fff;border:none;padding:5px 12px;border-radius:10px;display:flex;align-items:center;flex-shrink:0;margin-right:14px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-.hd-logo{height:36px;object-fit:contain;filter:none}
+.hd-logo-wrap{background:#fff;border:none;padding:3px 8px;border-radius:8px;display:flex;align-items:center;flex-shrink:0;margin-right:10px;box-shadow:0 1px 5px rgba(0,0,0,.2);max-height:30px}
+.hd-logo{height:24px;object-fit:contain;filter:none}
 .hd-logo-txt{height:36px;display:flex;align-items:center;font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:1px}
 .hd-sep{width:1px;background:rgba(255,255,255,.12);margin:10px 0;flex-shrink:0}
 .app-nav{display:flex;gap:0;align-items:stretch;flex:1;background:transparent}
@@ -966,7 +966,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
       <!-- Busca proposta -->
       <div class="form-card" style="margin-bottom:20px">
         <h3>🔍 Buscar Proposta de Referência</h3>
-        <div class="row2" style="align-items:flex-end">
+        <div style="display:flex;gap:10px;align-items:flex-end">
           <div class="field">
             <label>Nº da Proposta / Cotação</label>
             <div style="display:flex;gap:8px">
@@ -977,11 +977,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
               <button class="btn-primary" style="white-space:nowrap;padding:10px 18px;font-size:13px" onclick="buscarCotacao()">🔍 Buscar</button>
             </div>
           </div>
-          <div class="field">
-            <div id="pedStatus" style="padding:10px 14px;border-radius:7px;background:var(--gray-bg);border:1.5px solid var(--gray-bd);font-size:13px;color:var(--text-sm);min-height:40px;display:flex;align-items:center">
-              Digite o número e clique em Buscar
-            </div>
-          </div>
+
         </div>
       </div>
 
@@ -2138,7 +2134,7 @@ async function generatePDF(){
       doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
       doc.text(kv[0], xOff+3, y+3);
       doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
-      doc.text(kv[1]||'—', xOff+3, y+7.5);
+      doc.text(kv[1]||'—', xOff+3, y+6.5);
     }
     drawCond(colA[r], mL);
     drawCond(colB[r], mL+cW/2+2);
@@ -2534,19 +2530,10 @@ function pedNumFmt(n){ return 'PV' + String(n).padStart('00001'.length,0); }
 
 function buscarCotacao(){
   var num = document.getElementById('pedSearch').value.trim().toUpperCase();
-  var st  = document.getElementById('pedStatus');
-  if(!num){ st.textContent='Digite o número da proposta.'; st.style.color='#c0392b'; return; }
-
+  if(!num){ toast('Digite o número da proposta.','err'); return; }
   var cot = history_.find(function(h){ return h.num && h.num.toUpperCase()===num; });
-  if(!cot){
-    st.innerHTML='<span style="color:#c0392b">❌ Cotação <b>'+num+'</b> não encontrada no histórico.</span>';
-    document.getElementById('pedForm').style.display='none';
-    return;
-  }
-
-  st.innerHTML='<span style="color:var(--teal)">✅ Cotação <b>'+cot.num+'</b> encontrada — dados carregados.</span>';
+  if(!cot){ toast('Proposta "'+num+'" não encontrada no histórico.','err'); return; }
   preencherPedForm(cot);
-  document.getElementById('pedForm').style.display='block';
 }
 
 function preencherPedForm(cot){
@@ -2589,8 +2576,11 @@ function preencherPedForm(cot){
   });
   recalcPed();
   document.getElementById('pedForm').style.display='block';
-  document.getElementById('pedStatus').innerHTML =
-    '<span style="color:var(--teal);font-weight:700">✅ Proposta '+cot.num+' carregada — '+(cot.items||[]).length+' item(ns)</span>';
+  document.getElementById('pedSearch').value = cot.num||'';
+  // fechar dropdown se aberto
+  var pdl = document.getElementById('pedSearch_list');
+  if(pdl) pdl.style.display='none';
+  toast('Proposta '+cot.num+' carregada!','ok');
 }
 
 function recalcPed(){
