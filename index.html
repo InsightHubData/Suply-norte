@@ -944,7 +944,7 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
             </div>
             <div class="field">
               <label>E-mail Comercial</label>
-              <input type="email" id="fEmail" value="comercial@supplynorte.com.br" placeholder="">
+              <input type="email" id="fEmail" value="comercial2355@gmail.com" placeholder="">
             </div>
           </div>
         </div>
@@ -1046,6 +1046,10 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
         <!-- Transportador -->
         <div class="form-card" style="margin-bottom:20px">
           <h3>🚚 Transportador</h3>
+          <div class="field" style="margin-bottom:12px">
+            <label>Endereço de Entrega</label>
+            <input type="text" id="pedEnderecoEntrega" placeholder="Local físico de entrega da mercadoria">
+          </div>
           <div class="row2">
             <div class="field">
               <label>Nome do Transportador</label>
@@ -1205,17 +1209,25 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
               <label>Nome / Razão Social</label>
               <input type="text" id="cadCliNome" placeholder="Ex: FUNDEP">
             </div>
-            <div class="row2">
+            <div class="row2" style="margin-bottom:12px">
               <div class="field">
                 <label>CNPJ</label>
                 <input type="text" id="cadCliCnpj" placeholder="00.000.000/0001-00">
               </div>
               <div class="field">
-                <label>Endereço de Entrega</label>
-                <input type="text" id="cadCliCidade" placeholder="Av. Antonio Carlos, 6627 - Belo Horizonte / MG">
+                <label>Inscrição Estadual</label>
+                <input type="text" id="cadCliIE" placeholder="Ex: NÃO CONTRIBUINTE">
               </div>
             </div>
-            <div class="field" style="margin-top:12px">
+            <div class="field" style="margin-bottom:12px">
+              <label>Endereço do Cliente</label>
+              <input type="text" id="cadCliEndereco" placeholder="Av. Antonio Carlos, 6627 - CEP 31270901 - Belo Horizonte MG">
+            </div>
+            <div class="field" style="margin-bottom:12px">
+              <label>Endereço de Entrega (se diferente)</label>
+              <input type="text" id="cadCliCidade" placeholder="Deixe em branco se igual ao endereço do cliente">
+            </div>
+            <div class="field" style="margin-top:0">
               <label>Responsável / Contato</label>
               <input type="text" id="cadCliResp" placeholder="Nome do responsável">
             </div>
@@ -1356,15 +1368,23 @@ body{font-family:'Barlow',sans-serif;background:#0f2540;min-height:100vh;positio
       <label>Nome / Razão Social</label>
       <input type="text" id="editCliNome" placeholder="Nome do cliente">
     </div>
-    <div class="row2" style="margin-bottom:14px">
+    <div class="row2" style="margin-bottom:12px">
       <div class="field">
         <label>CNPJ</label>
         <input type="text" id="editCliCnpj" placeholder="00.000.000/0001-00">
       </div>
       <div class="field">
-        <label>Endereço de Entrega</label>
-        <input type="text" id="editCliCidade" placeholder="Av. Antonio Carlos, 6627 - Belo Horizonte / MG">
+        <label>Inscrição Estadual</label>
+        <input type="text" id="editCliIE" placeholder="Ex: NÃO CONTRIBUINTE">
       </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Endereço do Cliente</label>
+      <input type="text" id="editCliEndereco" placeholder="Av. Antonio Carlos, 6627 - CEP 31270901 - Belo Horizonte MG">
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Endereço de Entrega (se diferente)</label>
+      <input type="text" id="editCliCidade" placeholder="Deixe em branco se igual ao endereço do cliente">
     </div>
     <div class="field" style="margin-bottom:20px">
       <label>Responsável / Contato</label>
@@ -1617,11 +1637,11 @@ function acSearch(fieldId, type){
       d.onclick = function(){
         document.getElementById('fOrgao').value      = item.nome;
         document.getElementById('fCnpjOrgao').value  = item.cnpj||'';
-        document.getElementById('fCidadeOrgao').value= item.cidade||'';
+        document.getElementById('fCidadeOrgao').value= item.endereco||item.cidade||'';
         document.getElementById('fRespOrgao').value  = item.resp||'';
-        // Atualizar Local de Entrega com cidade do cliente
+        // Endereço de entrega como Local de Entrega
         var fLocal = document.getElementById('fLocal');
-        if(fLocal && item.cidade) fLocal.value = item.cidade;
+        if(fLocal) fLocal.value = item.cidade||item.endereco||'';
         list.style.display='none';
       };
       list.appendChild(d);
@@ -1862,7 +1882,7 @@ function clearForm(){
    });
   // E-mail comercial fixo — restaurar após limpar
   var emailEl = document.getElementById('fEmail');
-  if(emailEl) emailEl.value = 'comercial@supplynorte.com.br';
+  if(emailEl) emailEl.value = 'comercial2355@gmail.com';
   document.getElementById('fValidade').value='10';
   document.getElementById('fValProp').value='10 (dez) dias';
   document.getElementById('fPgto').value='10 (dez) dias';
@@ -2127,9 +2147,9 @@ async function generatePDF(){
       setF([230,240,250]); doc.roundedRect(xOff, y-1, cW/2-3, 9, 1, 1, 'F');
       setD(teal); doc.setLineWidth(0.8);
       doc.line(xOff, y+0, xOff, y-1+9);
-      doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
       doc.text(kv[0], xOff+3, y+3);
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
       doc.text(kv[1]||'—', xOff+3, y+6.5);
     }
     drawCond(colA[r], mL);
@@ -2143,7 +2163,7 @@ async function generatePDF(){
 
   var vendedor = document.getElementById('fVendedor').value||'Nicoly Cristina';
   var telefone = document.getElementById('fTel').value||'(31) 99889-9561';
-  var email    = document.getElementById('fEmail').value||'comercial@supplynorte.com.br';
+  var email    = document.getElementById('fEmail').value||'comercial2355@gmail.com';
 
   setD(grayBd); doc.setLineWidth(0.3);
   doc.line(W/2-35, y, W/2+35, y);
@@ -2374,9 +2394,11 @@ function saveClient(){
   if(!nome){ toast('Informe o nome do cliente.','err'); return; }
   clients_.push({
     id:Date.now(), nome:nome,
-    cnpj:document.getElementById('cadCliCnpj').value,
-    cidade:document.getElementById('cadCliCidade').value,
-    resp:document.getElementById('cadCliResp').value
+    cnpj:     document.getElementById('cadCliCnpj').value,
+    ie:       (document.getElementById('cadCliIE')||{}).value||'',
+    endereco: (document.getElementById('cadCliEndereco')||{}).value||'',
+    cidade:   document.getElementById('cadCliCidade').value,
+    resp:     document.getElementById('cadCliResp').value
   });
   saveLSCli(); renderCadLists();
   ['cadCliNome','cadCliCnpj','cadCliCidade','cadCliResp'].forEach(function(id){ document.getElementById(id).value=''; });
@@ -2544,11 +2566,13 @@ function preencherPedForm(cot){
   document.getElementById('pedLote').value         = cot.lote||'';
   document.getElementById('pedOrgao').value        = cot.orgao||'';
   document.getElementById('pedCnpjOrgao').value    = cot.cnpjOrgao||'';
-  document.getElementById('pedIEOrgao').value      = '';
-  document.getElementById('pedEnderecoOrgao').value= cot.cidadeOrgao||'';
+  document.getElementById('pedIEOrgao').value      = cot.ieOrgao||'';
+  document.getElementById('pedEnderecoOrgao').value  = cot.cidadeOrgao||'';
+  var eeEl = document.getElementById('pedEnderecoEntrega');
+  if(eeEl) eeEl.value = cot.local||cot.cidadeOrgao||'';
   document.getElementById('pedVendedor').value     = cot.vendedor||'';
   document.getElementById('pedTel').value          = cot.tel||'';
-  document.getElementById('pedEmail').value        = cot.email||'comercial@supplynorte.com.br';
+  document.getElementById('pedEmail').value        = cot.email||'comercial2355@gmail.com';
   // Endereço = campo cidadeOrgao (endereço completo cadastrado)
   var obsEnderecoStr = cot.cidadeOrgao || cot.enderecoOrgao || '';
   var obsRespStr     = cot.respOrgao || '';
@@ -2643,7 +2667,8 @@ function getPedData(){
     orgao:         g('pedOrgao'),
     cnpjOrgao:     g('pedCnpjOrgao'),
     ieOrgao:       g('pedIEOrgao'),
-    enderecoOrgao: g('pedEnderecoOrgao'),
+    enderecoOrgao:   g('pedEnderecoOrgao'),
+    enderecoEntrega: g('pedEnderecoEntrega'),
     transportador: g('pedTransportador'),
     frete:         g('pedFrete'),
     vendedor:      g('pedVendedor'),
@@ -2733,7 +2758,7 @@ function gerarPdfPedido(){
   // TITULO
   y += 2;
   doc.setFont('helvetica','bold'); doc.setFontSize(13); setC(navyDk);
-  doc.text('PEDIDO  No '+d.num, W/2, y, {align:'center'});
+  doc.text('Pedido: '+d.num, W/2, y, {align:'center'});
   y += 4;
   setD(teal); doc.setLineWidth(0.8);
   doc.line(mL+20, y, W-mR-20, y);
@@ -2744,7 +2769,7 @@ function gerarPdfPedido(){
   setF([235,245,255]); doc.roundedRect(mL,y,cW,clienteH,2,2,'F');
   setD([180,200,230]); doc.setLineWidth(0.3); doc.roundedRect(mL,y,cW,clienteH,2,2,'S');
   setF(teal); doc.rect(mL,y,2,clienteH,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navyDk);
   doc.text('Cliente', mL+5, y+4.5);
   doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(text_);
   doc.text(doc.splitTextToSize(d.orgao||'--',leftW-8)[0], mL+5, y+10);
@@ -2758,9 +2783,9 @@ function gerarPdfPedido(){
   function drawInfoCard(lbl,val,iy){
     setF([215,232,248]); doc.roundedRect(bx,iy,bw,9.5,1,1,'F');
     setD(teal); doc.setLineWidth(0.7); doc.line(bx+0.5,iy+1,bx+0.5,iy+8.5);
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setC(navyDk);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
     doc.text(lbl, bx+3, iy+3.5);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
     doc.text(String(val||'--'), bx+3, iy+8);
   }
   drawInfoCard('Ordem de Fornecimento', d.ordemFornec||'--', y+1);
@@ -2832,7 +2857,7 @@ function gerarPdfPedido(){
   setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL,y,cW,totH,2,2,'S');
   [1,2,3].forEach(function(i){ setD([190,210,232]); doc.line(mL+col4*i,y+3,mL+col4*i,y+totH-3); });
   function totBlock(lbl,val,xi){
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); setC(navyDk);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
     doc.text(lbl, xi+col4/2, y+7, {align:'center'});
     doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(text_);
     doc.text(String(val), xi+col4/2, y+17, {align:'center'});
@@ -2856,9 +2881,9 @@ function gerarPdfPedido(){
   setF([235,245,255]); doc.roundedRect(mL,y,cW,13,2,2,'F');
   setD(grayBd); doc.setLineWidth(0.2); doc.roundedRect(mL,y,cW,13,2,2,'S');
   setD([180,200,220]); doc.line(mL+cW/2,y+2,mL+cW/2,y+11);
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(navyDk);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navyDk);
   doc.text('Nome', mL+3, y+5);
-  doc.text('Modalidade de frete', mL+cW/2+3, y+5);
+  doc.text('Modalidade de frete', mL+cW/2+3, y+5.5);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(text_);
   doc.text(d.transportador||'MOTORISTA PARTICULAR', mL+3, y+10.5);
   var freteMap={CIF:'Contratacao do frete por conta do Remetente (CIF)',
@@ -2869,13 +2894,16 @@ function gerarPdfPedido(){
 
   // OBSERVACOES
   var obsText=(d.obs||'').trim();
-  if(!obsText) obsText = d.enderecoOrgao ? 'Local de Entrega: '+d.enderecoOrgao : '';
+  if(!obsText){
+    var localEnt = d.enderecoEntrega||d.enderecoOrgao||'';
+    if(localEnt) obsText = 'Local de Entrega: '+localEnt;
+  }
   if(obsText){
     if(y+20>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
     doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(navyDk);
-    doc.text('OBSERVACOES', mL, y);
+    doc.text('OBSERVAÇÕES', mL, y);
     setD(teal); doc.setLineWidth(0.6);
-    doc.line(mL,y+0.8,mL+doc.getTextWidth('OBSERVACOES'),y+0.8);
+    doc.line(mL,y+0.8,mL+doc.getTextWidth('OBSERVAÇÕES'),y+0.8);
     y+=8;
     var obsLns=doc.splitTextToSize(obsText, cW-8);
     var obsH=Math.max(obsLns.length*5+8,16);
@@ -3164,9 +3192,11 @@ function openEditClient(id){
   if(!c){ toast('Cliente não encontrado.','err'); return; }
   document.getElementById('editCliId').value    = id;
   document.getElementById('editCliNome').value  = c.nome||'';
-  document.getElementById('editCliCnpj').value  = c.cnpj||'';
-  document.getElementById('editCliCidade').value= c.cidade||'';
-  document.getElementById('editCliResp').value  = c.resp||'';
+  document.getElementById('editCliCnpj').value    = c.cnpj||'';
+  var editIE = document.getElementById('editCliIE'); if(editIE) editIE.value = c.ie||'';
+  var editEnd = document.getElementById('editCliEndereco'); if(editEnd) editEnd.value = c.endereco||'';
+  document.getElementById('editCliCidade').value  = c.cidade||'';
+  document.getElementById('editCliResp').value    = c.resp||'';
   document.getElementById('cliEditOv').classList.add('open');
 }
 
@@ -3184,9 +3214,11 @@ function saveEditClient(){
   clients_[idx] = {
     id:   clients_[idx].id,
     nome: nome,
-    cnpj: (document.getElementById('editCliCnpj').value||'').trim(),
-    cidade:(document.getElementById('editCliCidade').value||'').trim(),
-    resp: (document.getElementById('editCliResp').value||'').trim()
+    cnpj:     (document.getElementById('editCliCnpj').value||'').trim(),
+    ie:       ((document.getElementById('editCliIE')||{}).value||'').trim(),
+    endereco: ((document.getElementById('editCliEndereco')||{}).value||'').trim(),
+    cidade:   (document.getElementById('editCliCidade').value||'').trim(),
+    resp:     (document.getElementById('editCliResp').value||'').trim()
   };
   saveLSCli(); renderCadLists();
   document.getElementById('cliEditOv').classList.remove('open');
