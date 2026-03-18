@@ -708,7 +708,7 @@ label .req-star{font-size:11px}
 
       <div class="ln-feats">
         <div class="ln-feat"><div class="ln-feat-dot"></div><span>Geração de PDF com layout institucional</span></div>
-        <div class="ln-feat"><div class="ln-feat-dot"></div><span>Histórico semanal e controle de status</span></div>
+        <div class="ln-feat"><div class="ln-feat-dot"></div><span>Histórico de propostas e pedidos</span></div>
         <div class="ln-feat"><div class="ln-feat-dot"></div><span>Cadastro de clientes e produtos</span></div>
         <div class="ln-feat"><div class="ln-feat-dot"></div><span>Autocomplete em propostas</span></div>
       </div>
@@ -781,7 +781,7 @@ label .req-star{font-size:11px}
       <nav class="app-nav">
         <div class="nav-tab active" data-tab="tabProp"  onclick="switchTab(this)">📄 Nova Proposta</div>
         <div class="nav-tab"        data-tab="tabPed"   onclick="switchTab(this)">🛒 Pedido de Venda</div>
-        <div class="nav-tab"        data-tab="tabHist"  onclick="switchTab(this)">📋 Histórico Semanal</div>
+        <div class="nav-tab"        data-tab="tabHist"  onclick="switchTab(this)">📋 Histórico</div>
         <div class="nav-tab"        data-tab="tabCad"   onclick="switchTab(this)">🗂️ Cadastros</div>
       </nav>
     </div>
@@ -1132,8 +1132,8 @@ label .req-star{font-size:11px}
     </div>
 
     <div class="panel" id="tabHist">
-      <div class="sec-title">📋 Histórico Semanal de Propostas</div>
-      <div class="sec-sub">Visualize e gerencie as propostas por semana.</div>
+      <div class="sec-title">📋 Histórico</div>
+      <div class="sec-sub">Visualize e gerencie todas as propostas e pedidos.</div>
       <div class="sum-row">
         <div class="sum-card blue"><div class="sc-lbl">Esta semana</div><div class="sc-val" id="smTot">0</div></div>
         <div class="sum-card green"><div class="sc-lbl">Valor Total R$</div><div class="sc-val" id="smVal">R$ 0</div></div>
@@ -2331,9 +2331,9 @@ function renderHist(){
       '</td>'+
       '<td>'+
         '<div class="hist-acts">'+
-          '<button class="btn-sm btn-sm-b" title="Editar proposta" onclick="editProp('+h.id+')">✏️</button>'+
+          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp('+h.id+')">✏️</button>'+
           '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF('+h.id+')">🖨️</button>'+
-          '<button class="btn-sm btn-sm-r" title="Excluir proposta" onclick="delProp('+h.id+')">🗑️</button>'+
+          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp('+h.id+')">🗑️</button>'+
         '</div>'+
       '</td>';
     tbody.appendChild(tr);
@@ -2353,6 +2353,30 @@ function delProp(id){
 function editProp(id){
   var h=history_.find(function(h2){ return h2.id===id; });
   if(!h) return;
+  // Se for pedido, redirecionar para aba de pedido
+  if(h.tipo==='pedido'){
+    // Navegar para tabPed
+    document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+    var pedTab = document.querySelector('[data-tab="tabPed"]');
+    if(pedTab) pedTab.classList.add('active');
+    document.getElementById('tabPed').classList.add('active');
+    // Buscar pedido pelo cotRef ou num
+    var searchVal = h.cotRef||h.num||'';
+    document.getElementById('pedSearch').value = searchVal;
+    // Tentar encontrar proposta de referência
+    var propRef = history_.find(function(p){ return p.tipo!=='pedido' && (p.num===h.cotRef||p.num===h.num); });
+    if(propRef){
+      preencherPedForm(propRef);
+      // Restaurar número do pedido original
+      document.getElementById('pedNum').value   = h.num||'';
+      document.getElementById('pedCotRef').value = h.cotRef||'';
+    } else {
+      toast('Proposta de referência não encontrada. Preencha manualmente.','err');
+    }
+    return;
+  }
+  // Proposta normal
   editingId=id;
   document.getElementById('fNum').value        = h.num||'';
   document.getElementById('fData').value       = h.data||'';
@@ -2385,7 +2409,23 @@ function editProp(id){
   toast('Proposta carregada para edição.','');
 }
 
-function rePDF(id){ editProp(id); setTimeout(function(){ generatePDF(); },300); }
+function rePDF(id){
+  var h=history_.find(function(h2){ return h2.id===id; });
+  if(!h) return;
+  if(h.tipo==='pedido'){
+    // Carregar pedido e gerar PDF do pedido
+    var propRef = history_.find(function(p){ return p.tipo!=='pedido' && (p.num===h.cotRef||p.num===h.num); });
+    if(propRef){
+      preencherPedForm(propRef);
+      document.getElementById('pedNum').value    = h.num||'';
+      document.getElementById('pedCotRef').value = h.cotRef||'';
+    }
+    setTimeout(function(){ gerarPdfPedido(); }, 400);
+  } else {
+    editProp(id);
+    setTimeout(function(){ generatePDF(); }, 300);
+  }
+}
 function clearHist(){
   if(!confirm('Limpar todo o histórico?')) return;
   history_=[]; saveLS(); renderHist(); toast('Histórico limpo.','');
