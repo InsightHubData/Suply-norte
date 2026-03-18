@@ -2069,7 +2069,7 @@ async function generatePDF(){
 
     // Descrição — texto menor, cor secundária
     if(descLines.length>0){
-      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); setC(textSm);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(textSm);
       doc.text(descLines, descX+2, dy);
       dy += descLines.length*4 + 3;
     }
@@ -2144,17 +2144,20 @@ async function generatePDF(){
     if(y>H-28){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
     function drawCond(kv, xOff){
       if(!kv) return;
-      setF([230,240,250]); doc.roundedRect(xOff, y-1, cW/2-3, 9, 1, 1, 'F');
+      // Calcular altura baseada no texto
+      var valLines = doc.splitTextToSize(kv[1]||'—', cW/2-10);
+      var cardH = Math.max(9 + (valLines.length-1)*4.5, 9);
+      setF([230,240,250]); doc.roundedRect(xOff, y-1, cW/2-3, cardH, 1, 1, 'F');
       setD(teal); doc.setLineWidth(0.8);
-      doc.line(xOff, y+0, xOff, y-1+9);
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-      doc.text(kv[0], xOff+3, y+3);
-      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); setC(text_);
-      doc.text(kv[1]||'—', xOff+3, y+6.5);
+      doc.line(xOff, y+0, xOff, y-1+cardH);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(navyDk);
+      doc.text(kv[0], xOff+3, y+3.5);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); setC(text_);
+      doc.text(valLines, xOff+3, y+7.5);
     }
     drawCond(colA[r], mL);
     drawCond(colB[r], mL+cW/2+2);
-    y += 12;
+    y += 14;
   }
   y += 6;
 
@@ -2566,7 +2569,15 @@ function preencherPedForm(cot){
   document.getElementById('pedLote').value         = cot.lote||'';
   document.getElementById('pedOrgao').value        = cot.orgao||'';
   document.getElementById('pedCnpjOrgao').value    = cot.cnpjOrgao||'';
-  document.getElementById('pedIEOrgao').value      = cot.ieOrgao||'';
+  // Buscar IE do cadastro de clientes pelo nome
+  var cliMatch = clients_.find(function(c){ return c.nome && cot.orgao && c.nome.trim().toLowerCase()===cot.orgao.trim().toLowerCase(); });
+  document.getElementById('pedIEOrgao').value      = cot.ieOrgao||(cliMatch?cliMatch.ie:'')||'';
+  // Também preencher endereço completo do cliente se disponível
+  if(cliMatch && cliMatch.endereco){
+    document.getElementById('pedEnderecoOrgao').value = cliMatch.endereco;
+  }
+  var eeEl2 = document.getElementById('pedEnderecoEntrega');
+  if(eeEl2 && cliMatch && (cliMatch.cidade||cliMatch.local)) eeEl2.value = cliMatch.cidade||cliMatch.local||'';
   document.getElementById('pedEnderecoOrgao').value  = cot.cidadeOrgao||'';
   var eeEl = document.getElementById('pedEnderecoEntrega');
   if(eeEl) eeEl.value = cot.local||cot.cidadeOrgao||'';
@@ -2685,14 +2696,16 @@ function getPedData(){
 function salvarPedido(){
   var d = getPedData();
   if(!d.num||!d.orgao){ toast('Preencha ao menos Nº e Destinatário.','err'); return; }
+  // ID estável baseado no número do pedido (evita duplicatas)
+  var pedId = 'ped_' + d.num;
+  d.id = pedId;
   // Salva na lista de pedidos
-  var idx = pedidos_.findIndex(function(p){ return p.id===d.id; });
-  d.id = d.id||Date.now();
+  var idx = pedidos_.findIndex(function(p){ return p.id===pedId; });
   if(idx>=0) pedidos_[idx]=d; else pedidos_.unshift(d);
   localStorage.setItem('sn_pedidos', JSON.stringify(pedidos_));
-  // Também salva no histórico geral com tipo='pedido'
+  // Salva no histórico com tipo='pedido'
   var hEntry = {
-    id:       d.id,
+    id:       pedId,
     tipo:     'pedido',
     num:      d.num,
     data:     d.data,
@@ -2816,7 +2829,7 @@ function gerarPdfPedido(){
   var tX=mL;
   setF(navy); doc.rect(tX,y,totalW,7,'F');
   setF(teal); doc.rect(tX,y+7,totalW,0.6,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); setC(white);
+  doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(white);
   var hx=tX;
   [['#',c.num],['Descricao do Produto',c.nome],['Codigo',c.cod],
    ['Unid',c.un],['Quant',c.qtd],['Vlr Unit',c.unit],['Vlr Total',c.total]
@@ -2836,7 +2849,7 @@ function gerarPdfPedido(){
     var dx2=tX+c.num+1;
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
     doc.text(doc.splitTextToSize(it.nome||'',c.nome-2)[0]||'', dx2, y+6); dx2+=c.nome;
-    doc.setFont('helvetica','normal'); doc.setFontSize(7); setC(textSm);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(textSm);
     doc.text(it.cod||'', dx2+c.cod/2, y+6, {align:'center'}); dx2+=c.cod;
     doc.text(it.un||'UN', dx2+c.un/2, y+6, {align:'center'}); dx2+=c.un;
     doc.setFont('helvetica','bold'); setC(text_);
