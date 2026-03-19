@@ -671,8 +671,11 @@ label .req-star{font-size:11px}
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
-    getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where, Timestamp
+    getFirestore, collection, doc, setDoc, getDocs, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDQrjjXPR2V0WkNqLViSFDe1tZIFu6JZGA",
@@ -683,8 +686,23 @@ label .req-star{font-size:11px}
     appId: "1:1065231568839:web:decff755ef5408316d13e2"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  // Login automático com conta de serviço dedicada
+  const FB_EMAIL = 'app.supplynorte@gmail.com';
+  const FB_PASS  = 'SupplyNorte@2025!';
+
+  async function fbSignIn(){
+    try {
+      await signInWithEmailAndPassword(auth, FB_EMAIL, FB_PASS);
+      console.log('Firebase: autenticado com sucesso');
+    } catch(e){
+      console.warn('Firebase: erro de autenticação —', e.message);
+    }
+  }
+
 
   // ── Expor funções globais para o resto do app ──
   window.fbSaveCliente = async function(obj){
@@ -732,6 +750,8 @@ label .req-star{font-size:11px}
   // ── Carregar dados do Firebase ao iniciar ──
   window.fbLoadAll = async function(){
     window._fbReady = false;
+    // Autenticar antes de acessar o Firestore
+    if(!auth.currentUser) await fbSignIn();
     try {
       // Clientes
       var cliSnap = await getDocs(collection(db,'clientes'));
@@ -780,7 +800,7 @@ label .req-star{font-size:11px}
 
   // Executar carregamento após DOM pronto
   document.addEventListener('DOMContentLoaded', function(){
-    window.fbLoadAll();
+    fbSignIn().then(function(){ window.fbLoadAll(); });
   });
 </script>
 </head>
