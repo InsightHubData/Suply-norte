@@ -666,6 +666,123 @@ label .req-star{font-size:11px}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:768px){.app-hd{padding:8px 14px;flex-wrap:wrap;gap:6px}.app-body{padding:14px}.row2,.row3,.row4{grid-template-columns:1fr}.cad-grid{grid-template-columns:1fr}}
 </style>
+
+<!-- ══ FIREBASE SDK ══ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where, Timestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQrjjXPR2V0WkNqLViSFDe1tZIFu6JZGA",
+    authDomain: "db-supply-norte.firebaseapp.com",
+    projectId: "db-supply-norte",
+    storageBucket: "db-supply-norte.firebasestorage.app",
+    messagingSenderId: "1065231568839",
+    appId: "1:1065231568839:web:decff755ef5408316d13e2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // ── Expor funções globais para o resto do app ──
+  window.fbSaveCliente = async function(obj){
+    try { await setDoc(doc(db,'clientes', String(obj.id)), obj); } catch(e){ console.error('fbSaveCliente',e); }
+  };
+  window.fbDeleteCliente = async function(id){
+    try { await deleteDoc(doc(db,'clientes', String(id))); } catch(e){ console.error('fbDeleteCliente',e); }
+  };
+  window.fbSaveProduto = async function(obj){
+    try { await setDoc(doc(db,'produtos', String(obj.id)), obj); } catch(e){ console.error('fbSaveProduto',e); }
+  };
+  window.fbDeleteProduto = async function(id){
+    try { await deleteDoc(doc(db,'produtos', String(id))); } catch(e){ console.error('fbDeleteProduto',e); }
+  };
+  window.fbSaveProposta = async function(obj){
+    try { await setDoc(doc(db,'propostas', String(obj.id)), obj); } catch(e){ console.error('fbSaveProposta',e); }
+  };
+  window.fbSavePedido = async function(obj){
+    try { await setDoc(doc(db,'pedidos', String(obj.id)), obj); } catch(e){ console.error('fbSavePedido',e); }
+  };
+  window.fbDeleteHist = async function(id, tipo){
+    try {
+      var col = tipo==='pedido' ? 'pedidos' : 'propostas';
+      await deleteDoc(doc(db, col, String(id)));
+    } catch(e){ console.error('fbDeleteHist',e); }
+  };
+
+  // ── Limpeza automática: remove entradas com mais de 45 dias ──
+  async function cleanOld(colName){
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 45);
+    var cutoffStr = cutoff.toISOString().split('T')[0]; // YYYY-MM-DD
+    try {
+      var snap = await getDocs(collection(db, colName));
+      snap.forEach(async function(d){
+        var data = d.data().data || d.data().createdAt || '';
+        if(data && data < cutoffStr){
+          await deleteDoc(doc(db, colName, d.id));
+          console.log('Removido (>45 dias):', colName, d.id);
+        }
+      });
+    } catch(e){ console.error('cleanOld',e); }
+  }
+
+  // ── Carregar dados do Firebase ao iniciar ──
+  window.fbLoadAll = async function(){
+    window._fbReady = false;
+    try {
+      // Clientes
+      var cliSnap = await getDocs(collection(db,'clientes'));
+      var fbCli = [];
+      cliSnap.forEach(function(d){ fbCli.push(d.data()); });
+      if(fbCli.length > 0){
+        window.clients_ = fbCli;
+        localStorage.setItem('sn_cli', JSON.stringify(fbCli));
+      }
+      // Produtos (sem imagem no Firebase — img fica local)
+      var prodSnap = await getDocs(collection(db,'produtos'));
+      var fbProd = [];
+      prodSnap.forEach(function(d){ fbProd.push(d.data()); });
+      if(fbProd.length > 0){
+        // Fotos incluídas no Firebase (2KB x 80 produtos = 160KB)
+        window.products_ = fbProd;
+        localStorage.setItem('sn_prod', JSON.stringify(fbProd));
+      }
+      // Histórico: propostas + pedidos
+      var propSnap = await getDocs(collection(db,'propostas'));
+      var pedSnap  = await getDocs(collection(db,'pedidos'));
+      var fbHist = [];
+      propSnap.forEach(function(d){ var o=d.data(); o.tipo=o.tipo||'proposta'; fbHist.push(o); });
+      pedSnap.forEach(function(d){  var o=d.data(); o.tipo='pedido'; fbHist.push(o); });
+      if(fbHist.length > 0){
+        fbHist.sort(function(a,b){ return (b.id||0)-(a.id||0); });
+        window.history_ = fbHist;
+        localStorage.setItem('sn_hist', JSON.stringify(fbHist));
+      }
+      // Limpeza automática 45 dias
+      cleanOld('propostas');
+      cleanOld('pedidos');
+      console.log('Firebase: carregado —',
+        (window.clients_||[]).length,'clientes,',
+        (window.products_||[]).length,'produtos,',
+        (window.history_||[]).length,'histórico');
+    } catch(e){
+      console.warn('Firebase offline, usando localStorage:', e.message);
+    }
+    window._fbReady = true;
+    // Atualizar UI se app já iniciado
+    if(typeof renderCadLists==='function') renderCadLists();
+    if(typeof renderHist==='function') renderHist();
+    if(typeof initProdCodField==='function') initProdCodField();
+  };
+
+  // Executar carregamento após DOM pronto
+  document.addEventListener('DOMContentLoaded', function(){
+    window.fbLoadAll();
+  });
+</script>
 </head>
 <body>
 <div class="bg-orbs"><span></span><span></span><span></span><span></span><span></span></div>
@@ -787,6 +904,7 @@ label .req-star{font-size:11px}
     </div>
     <div class="hd-right">
       <div class="hd-pill" id="hdUser">👤 ...</div>
+      <div id="fbStatus" title="Status Firebase" style="font-size:11px;padding:3px 8px;border-radius:12px;background:rgba(255,255,255,.15);color:#a8d8a8;display:flex;align-items:center;gap:4px;font-weight:600">⚡ Firebase</div>
       <button class="btn-hd btn-hd-red" onclick="doLogout()">🚪 Sair</button>
     </div>
   </header>
@@ -1265,9 +1383,9 @@ label .req-star{font-size:11px}
             <h3>📦 Novo Produto</h3>
             <div class="row2" style="margin-bottom:12px">
               <div class="field">
-              <label>Código Interno <span class="req-star">★</span></label>
-              <input type="text" id="cadProdCod" placeholder="P0001"
-              style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px">
+                <label>Código Interno <span class="req-star">★</span></label>
+                <input type="text" id="cadProdCod" placeholder="P0001" readonly
+                  style="background:#e8f4fd;font-weight:700;color:var(--navy);letter-spacing:1px">
               </div>
               <div class="field">
                 <label>Nome do Produto <span class="req-star">★</span></label>
@@ -1536,9 +1654,34 @@ try { history_  = JSON.parse(localStorage.getItem('sn_hist')  || '[]'); } catch(
 try { clients_  = JSON.parse(localStorage.getItem('sn_cli')   || '[]'); } catch(e){ clients_=[]; }
 try { products_ = JSON.parse(localStorage.getItem('sn_prod')  || '[]'); } catch(e){ products_=[]; }
 
-function saveLS(){ try{ localStorage.setItem('sn_hist', JSON.stringify(history_)); }catch(e){} }
-function saveLSCli(){ try{ localStorage.setItem('sn_cli', JSON.stringify(clients_)); }catch(e){} }
-function saveLSProd(){ try{ localStorage.setItem('sn_prod', JSON.stringify(products_)); }catch(e){} }
+function saveLS(){
+  try{ localStorage.setItem('sn_hist', JSON.stringify(history_)); }catch(e){}
+  // Sincronizar com Firebase
+  history_.forEach(function(h){
+    if(!h || !h.id) return;
+    if(h.tipo==='pedido'){
+      if(typeof window.fbSavePedido==='function') window.fbSavePedido(h);
+    } else {
+      if(typeof window.fbSaveProposta==='function') window.fbSaveProposta(h);
+    }
+  });
+}
+function saveLSCli(){
+  try{ localStorage.setItem('sn_cli', JSON.stringify(clients_)); }catch(e){}
+  clients_.forEach(function(c){
+    if(c && c.id && typeof window.fbSaveCliente==='function') window.fbSaveCliente(c);
+  });
+}
+function saveLSProd(){
+  try{ localStorage.setItem('sn_prod', JSON.stringify(products_)); }catch(e){}
+  products_.forEach(function(p){
+    if(!p || !p.id) return;
+    if(typeof window.fbSaveProduto==='function'){
+      // 2KB por foto * 80 produtos = 160KB — cabe no Firestore
+      window.fbSaveProduto(p);
+    }
+  });
+}
 
 /* ══════════════════════════════════════════
    LOGIN
@@ -1594,6 +1737,15 @@ function initApp(){
   renderCadLists();
   initProdCodField();
   if(document.getElementById('itemsBody').children.length === 0) addItemRow();
+  // Atualizar status Firebase no header
+  var fbSt = document.getElementById('fbStatus');
+  if(fbSt){
+    if(typeof window.fbLoadAll==='function'){
+      fbSt.style.color='#a8d8a8'; fbSt.textContent='⚡ Firebase';
+    } else {
+      fbSt.style.color='#f5a623'; fbSt.textContent='⚠️ Local';
+    }
+  }
 }
 
 /* ══════════════════════════════════════════
@@ -2345,9 +2497,12 @@ function updStatus(id,val){
   if(idx>=0){ history_[idx].status=val; saveLS(); renderHist(); }
 }
 function delProp(id){
-  if(!confirm('Excluir?')) return;
-  history_=history_.filter(function(h){ return h.id!==id; });
-  saveLS(); renderHist();
+  if(!confirm('Excluir este registro do histórico?')) return;
+  var h = history_.find(function(x){ return x.id===id; });
+  history_=history_.filter(function(x){ return x.id!==id; });
+  localStorage.setItem('sn_hist', JSON.stringify(history_));
+  if(h && typeof window.fbDeleteHist==='function') window.fbDeleteHist(id, h.tipo||'proposta');
+  renderHist(); toast('Removido.','ok');
 }
 
 function editProp(id){
