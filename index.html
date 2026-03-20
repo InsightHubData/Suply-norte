@@ -2482,9 +2482,9 @@ function renderHist(){
       '</td>'+
       '<td>'+
         '<div class="hist-acts">'+
-          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp('+h.id+')">✏️</button>'+
-          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF('+h.id+')">🖨️</button>'+
-          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp('+h.id+')">🗑️</button>'+
+          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp(\''+h.id+'\')" >✏️</button>'+
+          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF(\''+h.id+'\')" >🖨️</button>'+
+          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp(\''+h.id+'\')" >🗑️</button>'+
         '</div>'+
       '</td>';
     tbody.appendChild(tr);
@@ -3020,15 +3020,15 @@ function gerarPdfPedido(){
 
   // TABELA ITENS — largura exata cW sem overflow
   var totalW=cW;
-  var c={num:10,cod:20,un:13,qtd:13,unit:22,total:22};
-  c.nome = totalW-c.num-c.cod-c.un-c.qtd-c.unit-c.total;
+  var c={num:10,cod:20,un:13,qtd:13,unit:22,total:22,img:18};
+  c.nome = totalW-c.num-c.cod-c.un-c.qtd-c.unit-c.total-c.img;
   var tX=mL;
   setF(navy); doc.rect(tX,y,totalW,7,'F');
   setF(teal); doc.rect(tX,y+7,totalW,0.6,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(8); setC(white);
   var hx=tX;
   [['#',c.num],['Descricao do Produto',c.nome],['Codigo',c.cod],
-   ['Unid',c.un],['Quant',c.qtd],['Vlr Unit',c.unit],['Vlr Total',c.total]
+   ['Unid',c.un],['Quant',c.qtd],['Vlr Unit',c.unit],['Vlr Total',c.total],['Foto',c.img]
   ].forEach(function(h){ doc.text(h[0],hx+h[1]/2,y+4.5,{align:'center'}); hx+=h[1]; });
   y+=7.6;
   setD(grayBd); doc.setLineWidth(0.2);
@@ -3038,25 +3038,46 @@ function gerarPdfPedido(){
     var bg=i%2===0?white:[246,249,252];
     setF(bg); doc.rect(tX,y,totalW,9,'F');
     setD(grayBd); doc.rect(tX,y,totalW,9,'S');
+    // Calcular altura da linha: mínimo 9mm, mas se há foto fica maior
+    var imgPed = it.img || (function(){ var p=products_.find(function(pr){ return pr.cod===it.cod||pr.nome===it.nome; }); return p&&p.img?p.img:''; })();
+    var rowHped = imgPed ? Math.max(9, 18) : 9;
+    var midY = y + rowHped/2 + 1.5;
+
     var vx2=tX+c.num;
-    [c.nome,c.cod,c.un,c.qtd,c.unit].forEach(function(w){ doc.line(vx2,y,vx2,y+9); vx2+=w; });
+    [c.nome,c.cod,c.un,c.qtd,c.unit,c.total].forEach(function(w){ doc.line(vx2,y,vx2,y+rowHped); vx2+=w; });
+    setF(bg); doc.rect(tX,y,totalW,rowHped,'F');
+    setD(grayBd); doc.rect(tX,y,totalW,rowHped,'S');
+    var vx3=tX+c.num;
+    [c.nome,c.cod,c.un,c.qtd,c.unit,c.total].forEach(function(w){ doc.line(vx3,y,vx3,y+rowHped); vx3+=w; });
+
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
-    doc.text(String(it.num||i+1).padStart(2,'0'), tX+c.num/2, y+6, {align:'center'});
+    doc.text(String(it.num||i+1).padStart(2,'0'), tX+c.num/2, midY, {align:'center'});
     var dx2=tX+c.num+1;
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); setC(navyDk);
-    doc.text(doc.splitTextToSize(it.nome||'',c.nome-2)[0]||'', dx2, y+6); dx2+=c.nome;
+    doc.text(doc.splitTextToSize(it.nome||'',c.nome-2)[0]||'', dx2, midY); dx2+=c.nome;
     doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(textSm);
-    doc.text(it.cod||'', dx2+c.cod/2, y+6, {align:'center'}); dx2+=c.cod;
-    doc.text(it.un||'UN', dx2+c.un/2, y+6, {align:'center'}); dx2+=c.un;
+    doc.text(it.cod||'', dx2+c.cod/2, midY, {align:'center'}); dx2+=c.cod;
+    doc.text(it.un||'UN', dx2+c.un/2, midY, {align:'center'}); dx2+=c.un;
     doc.setFont('helvetica','bold'); setC(text_);
-    doc.text(String(it.qty||0), dx2+c.qtd/2, y+6, {align:'center'}); dx2+=c.qtd;
+    doc.text(String(it.qty||0), dx2+c.qtd/2, midY, {align:'center'}); dx2+=c.qtd;
     doc.setFont('helvetica','normal'); setC(text_);
-    doc.text(fBp(it.unit), dx2+c.unit/2, y+6, {align:'center'}); dx2+=c.unit;
+    doc.text(fBp(it.unit), dx2+c.unit/2, midY, {align:'center'}); dx2+=c.unit;
     setC(teal); doc.setFont('helvetica','bold');
-    doc.text(fBp(it.total), dx2+c.total/2, y+6, {align:'center'});
-    y+=9;
+    doc.text(fBp(it.total), dx2+c.total/2, midY, {align:'center'}); dx2+=c.total;
+
+    // Foto: coluna após Total
+    if(imgPed){
+      try{
+        var imgTypePed = imgPed.includes('png')?'PNG':'JPEG';
+        var imgSzPed   = Math.min(c.img-2, rowHped-2);
+        var imgYPed    = y + (rowHped-imgSzPed)/2;
+        doc.addImage(imgPed, imgTypePed, dx2+1, imgYPed, imgSzPed, imgSzPed);
+      }catch(ex){}
+    }
+
+    y += rowHped + 1;
   });
-  y+=6;
+  y+=4;
 
   // TOTAIS — 4 blocos dentro de cW
   if(y+22>H-25){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
