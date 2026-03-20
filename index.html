@@ -2154,9 +2154,9 @@ async function generatePDF(){
 
   // ── TABELA DE ITENS ───────────────────────────────────────
   var items = getItems();
-  var colW  = { item:11, qtd:11, desc:76, img:34, unit:24, total:24 };
+  var colW  = { item:11, qtd:11, desc:80, unit:24, total:24, img:30 };
   var tX    = mL;
-  var tableW= colW.item+colW.qtd+colW.desc+colW.img+colW.unit+colW.total;
+  var tableW= colW.item+colW.qtd+colW.desc+colW.unit+colW.total+colW.img;
 
   // Header da tabela
   setF(navy); doc.rect(tX, y, tableW, 7, 'F');
@@ -2194,7 +2194,7 @@ async function generatePDF(){
     // Linhas verticais separadoras
     var vx=tX+colW.item;
     setD(grayBd);
-    [colW.qtd,colW.desc,colW.img,colW.unit].forEach(function(w){
+    [colW.qtd,colW.desc,colW.unit,colW.total].forEach(function(w){
       doc.line(vx,y,vx,y+rowH); vx+=w;
     });
 
@@ -2240,13 +2240,23 @@ async function generatePDF(){
 
     // Valores unitário e total
     var priceY  = y+rowH/2+1.5;
-    var unitX   = tX+colW.item+colW.qtd+colW.desc+colW.img;
-    var totalX  = unitX+colW.unit;
+    var unitX    = tX+colW.item+colW.qtd+colW.desc;
+    var totalX   = unitX+colW.unit;
+    var imgColX0 = totalX+colW.total;
     doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
     doc.text(fBRLpdf(itm.unit),  unitX +colW.unit/2,  priceY, {align:'center'});
-    // Total em verde
     setC(teal);
     doc.text(fBRLpdf(itm.total), totalX+colW.total/2, priceY, {align:'center'});
+
+    // Foto na coluna após Total (lado direito)
+    if(itm.img){
+      try{
+        var imgType2 = itm.img.includes('png')?'PNG':'JPEG';
+        var imgSz2   = Math.min(colW.img-4, rowH-4);
+        var imgYY2   = y + (rowH-imgSz2)/2;
+        doc.addImage(itm.img, imgType2, imgColX0+1, imgYY2, imgSz2, imgSz2);
+      }catch(ex){}
+    }
 
     y += rowH;
   }
@@ -2482,9 +2492,9 @@ function renderHist(){
       '</td>'+
       '<td>'+
         '<div class="hist-acts">'+
-          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp(\''+h.id+'\')" >✏️</button>'+
-          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF(\''+h.id+'\')" >🖨️</button>'+
-          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp(\''+h.id+'\')" >🗑️</button>'+
+          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp(\''+h.id+'\')">✏️</button>'+
+          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF(\''+h.id+'\')">🖨️</button>'+
+          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp(\''+h.id+'\')">🗑️</button>'+
         '</div>'+
       '</td>';
     tbody.appendChild(tr);
