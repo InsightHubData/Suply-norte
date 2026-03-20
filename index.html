@@ -2154,9 +2154,9 @@ async function generatePDF(){
 
   // ── TABELA DE ITENS ───────────────────────────────────────
   var items = getItems();
-  var colW  = { item:11, qtd:11, desc:110, unit:24, total:24 };
+  var colW  = { item:11, qtd:11, desc:76, img:34, unit:24, total:24 };
   var tX    = mL;
-  var tableW= colW.item+colW.qtd+colW.desc+colW.unit+colW.total;
+  var tableW= colW.item+colW.qtd+colW.desc+colW.img+colW.unit+colW.total;
 
   // Header da tabela
   setF(navy); doc.rect(tX, y, tableW, 7, 'F');
@@ -2194,7 +2194,7 @@ async function generatePDF(){
     // Linhas verticais separadoras
     var vx=tX+colW.item;
     setD(grayBd);
-    [colW.qtd,colW.desc,colW.unit].forEach(function(w){
+    [colW.qtd,colW.desc,colW.img,colW.unit].forEach(function(w){
       doc.line(vx,y,vx,y+rowH); vx+=w;
     });
 
@@ -2363,17 +2363,15 @@ async function generatePDF(){
   var loteDisplay = lote ? ' - LOTE ' + lote.replace(/\s+/g,'') : '';
   var fname = numProp + ' - ' + orgaoSlug + loteDisplay + '.pdf';
   doc.save(fname);
-  // Auto-salvar no histórico ao gerar PDF
-  var autoSaveData = getFormData();
-  if(autoSaveData.num && autoSaveData.orgao){
-    var hiIdx = history_.findIndex(function(h){ return h.id===autoSaveData.id; });
-    if(hiIdx>=0) history_[hiIdx]=autoSaveData; else history_.unshift(autoSaveData);
-    if(hiIdx<0) nextProposalNum(true);
-    saveLS();
-    editingId=null;
-    renderHist();
+  // Salvar proposta (sem duplicar)
+  var _d = getFormData();
+  if(_d.num && _d.orgao){
+    var _hi = history_.findIndex(function(h){ return h.id===_d.id && h.tipo!=='pedido'; });
+    if(_hi>=0){ history_[_hi]=_d; }
+    else{ history_.unshift(_d); nextProposalNum(true); }
+    editingId=null; saveLS(); renderHist();
   }
-  toast('PDF gerado e proposta salva no histórico!','ok');
+  toast('PDF gerado!','ok');
 }
 
 function addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA){
