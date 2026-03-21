@@ -2180,9 +2180,9 @@ async function generatePDF(){
     var descText = itm.desc||itm.obs||'';
     var nomeLines = nomeProd ? doc.splitTextToSize(nomeProd.toUpperCase(), colW.desc-7) : [];
     var descLines = descText ? doc.splitTextToSize(descText, colW.desc-9) : [];
-    var imgH      = itm.img ? 30 : 0;
+    // Foto fica ao lado direito — altura basada só no texto
     var textH     = (nomeLines.length*5) + (descLines.length>0 ? descLines.length*4+3 : 0);
-    var rowH      = Math.max(textH + imgH + 8, 14);
+    var rowH      = Math.max(textH + 8, 14);
 
     if(y+rowH > H-22){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
 
@@ -2492,9 +2492,9 @@ function renderHist(){
       '</td>'+
       '<td>'+
         '<div class="hist-acts">'+
-          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp(\''+h.id+'\')">✏️</button>'+
-          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF(\''+h.id+'\')">🖨️</button>'+
-          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp(\''+h.id+'\')">🗑️</button>'+
+          '<button class="btn-sm btn-sm-b" title="'+(h.tipo==="pedido"?"Editar pedido":"Editar proposta")+'" onclick="editProp(this)" data-hid="'+h.id+'">✏️</button>'+
+          '<button class="btn-sm btn-sm-g" title="Imprimir / Gerar PDF" onclick="rePDF(this)" data-hid="'+h.id+'">🖨️</button>'+
+          '<button class="btn-sm btn-sm-r" title="'+(h.tipo==="pedido"?"Excluir pedido":"Excluir proposta")+'" onclick="delProp(this)" data-hid="'+h.id+'">🗑️</button>'+
         '</div>'+
       '</td>';
     tbody.appendChild(tr);
@@ -2505,17 +2505,31 @@ function updStatus(id,val){
   var idx=history_.findIndex(function(h){ return h.id===id; });
   if(idx>=0){ history_[idx].status=val; saveLS(); renderHist(); }
 }
-function delProp(id){
+function delProp(arg){
+  var id = _resolveHid(arg);
   if(!confirm('Excluir este registro do histórico?')) return;
-  var h = history_.find(function(x){ return x.id===id; });
-  history_=history_.filter(function(x){ return x.id!==id; });
+  var h = _findHist(id);
+  history_=history_.filter(function(x){ return String(x.id)!==String(id); });
   localStorage.setItem('sn_hist', JSON.stringify(history_));
   if(h && typeof window.fbDeleteHist==='function') window.fbDeleteHist(id, h.tipo||'proposta');
   renderHist(); toast('Removido.','ok');
 }
 
-function editProp(id){
-  var h=history_.find(function(h2){ return h2.id===id; });
+
+// ── Resolve id do histórico (number ou string) ──────────────
+function _resolveHid(arg){
+  // arg pode ser: elemento DOM (com data-hid) ou valor direto
+  if(arg && arg.dataset) return arg.dataset.hid;
+  return arg;
+}
+function _findHist(raw){
+  // Tenta como string primeiro, depois como número
+  var h = history_.find(function(x){ return String(x.id)===String(raw); });
+  return h||null;
+}
+function editProp(arg){
+  var id = _resolveHid(arg);
+  var h=_findHist(id);
   if(!h) return;
   // Se for pedido, redirecionar para aba de pedido
   if(h.tipo==='pedido'){
@@ -2573,8 +2587,9 @@ function editProp(id){
   toast('Proposta carregada para edição.','');
 }
 
-function rePDF(id){
-  var h=history_.find(function(h2){ return h2.id===id; });
+function rePDF(arg){
+  var id = _resolveHid(arg);
+  var h=_findHist(id);
   if(!h) return;
   if(h.tipo==='pedido'){
     // Carregar pedido e gerar PDF do pedido
@@ -3030,7 +3045,7 @@ function gerarPdfPedido(){
 
   // TABELA ITENS — largura exata cW sem overflow
   var totalW=cW;
-  var c={num:10,cod:20,un:13,qtd:13,unit:22,total:22,img:18};
+  var c={num:10,cod:20,un:16,qtd:13,unit:22,total:22,img:16};
   c.nome = totalW-c.num-c.cod-c.un-c.qtd-c.unit-c.total-c.img;
   var tX=mL;
   setF(navy); doc.rect(tX,y,totalW,7,'F');
@@ -3067,7 +3082,8 @@ function gerarPdfPedido(){
     doc.text(doc.splitTextToSize(it.nome||'',c.nome-2)[0]||'', dx2, midY); dx2+=c.nome;
     doc.setFont('helvetica','normal'); doc.setFontSize(8); setC(textSm);
     doc.text(it.cod||'', dx2+c.cod/2, midY, {align:'center'}); dx2+=c.cod;
-    doc.text(it.un||'UN', dx2+c.un/2, midY, {align:'center'}); dx2+=c.un;
+    var unTxt = doc.splitTextToSize(it.un||'UN', c.un-2)[0]||'';
+    doc.text(unTxt, dx2+c.un/2, midY, {align:'center'}); dx2+=c.un;
     doc.setFont('helvetica','bold'); setC(text_);
     doc.text(String(it.qty||0), dx2+c.qtd/2, midY, {align:'center'}); dx2+=c.qtd;
     doc.setFont('helvetica','normal'); setC(text_);
