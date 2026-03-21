@@ -2228,17 +2228,6 @@ async function generatePDF(){
       dy += descLines.length*4 + 3;
     }
 
-    // Foto na coluna dedicada ao lado da descricao
-    if(itm.img){
-      try{
-        var imgType = itm.img.includes('png')?'PNG':'JPEG';
-        var imgColX = tX+colW.item+colW.qtd+colW.desc+2;
-        var imgSz   = Math.min(colW.img-4, rowH-4);
-        var imgYY   = y + (rowH-imgSz)/2;
-        doc.addImage(itm.img, imgType, imgColX, imgYY, imgSz, imgSz);
-      }catch(ex){}
-    }
-
     // Valores unitário e total — posições absolutas
     var priceY = y + rowH/2 + 1.5;
     var xUnit  = tX + colW.item + colW.qtd + colW.desc;
