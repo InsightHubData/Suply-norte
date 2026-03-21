@@ -2182,7 +2182,7 @@ async function generatePDF(){
     var descLines = descText ? doc.splitTextToSize(descText, colW.desc-9) : [];
     // Altura baseada no texto; se há foto garante mínimo de 22mm
     var textH = (nomeLines.length*5) + (descLines.length>0 ? descLines.length*4+3 : 0);
-    var rowH  = Math.max(textH + 8, itm.img ? 22 : 12);
+    var rowH  = Math.max(textH + 8, itm.img ? 26 : 12);
 
     if(y+rowH > H-22){ addPdfFooter(doc,W,H,mL,mR,navyDk,white,EMPRESA); doc.addPage(); y=mT+2; }
 
@@ -2194,9 +2194,10 @@ async function generatePDF(){
     // Linhas verticais separadoras
     var vx=tX+colW.item;
     setD(grayBd);
-    [colW.qtd,colW.desc,colW.unit,colW.total].forEach(function(w){
+    // Linhas verticais: todas as colunas incluindo Foto
+    [colW.qtd,colW.desc,colW.unit,colW.total,colW.img].forEach(function(w){
       doc.line(vx,y,vx,y+rowH); vx+=w;
-    }); // coluna Foto sem linha separadora
+    });
 
     // Nº item (bold, centrado)
     doc.setFont('helvetica','bold'); doc.setFontSize(9); setC(navy);
@@ -2238,26 +2239,26 @@ async function generatePDF(){
       }catch(ex){}
     }
 
-    // Valores unitário e total
-    var priceY  = y+rowH/2+1.5;
-    // Unit R$ e Total R$
-    var unitX  = tX+colW.item+colW.qtd+colW.desc;
-    var totalX = unitX+colW.unit;
-    var fotoX  = totalX+colW.total;
-    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
-    doc.text(fBRLpdf(itm.unit),  unitX +colW.unit/2,  priceY, {align:'center'});
-    setC(teal);
-    doc.text(fBRLpdf(itm.total), totalX+colW.total/2, priceY, {align:'center'});
+    // Valores unitário e total — posições absolutas
+    var priceY = y + rowH/2 + 1.5;
+    var xUnit  = tX + colW.item + colW.qtd + colW.desc;
+    var xTotal = xUnit + colW.unit;
+    var xFoto  = xTotal + colW.total;  // início da coluna Foto
 
-    // Foto — última coluna, só UMA imagem, centralizada na linha
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); setC(navy);
+    doc.text(fBRLpdf(itm.unit),  xUnit  + colW.unit/2,  priceY, {align:'center'});
+    setC(teal);
+    doc.text(fBRLpdf(itm.total), xTotal + colW.total/2, priceY, {align:'center'});
+
+    // Foto — SOMENTE na coluna Foto (última), nunca sobrepõe Unit/Total
     if(itm.img){
       try{
-        var imgTypeF = itm.img.includes('png')?'PNG':'JPEG';
-        var imgSzF   = Math.min(colW.img-4, rowH-4);
-        var imgXF    = fotoX + (colW.img-imgSzF)/2;
-        var imgYF    = y + (rowH-imgSzF)/2;
-        doc.addImage(itm.img, imgTypeF, imgXF, imgYF, imgSzF, imgSzF);
-      }catch(ex){}
+        var imgTypeF = itm.img.includes('png') ? 'PNG' : 'JPEG';
+        var maxSz    = Math.min(colW.img - 3, rowH - 3);  // cabe dentro da coluna
+        var imgXF    = xFoto + (colW.img - maxSz) / 2;    // centrado na col Foto
+        var imgYF    = y     + (rowH     - maxSz) / 2;    // centrado na linha
+        doc.addImage(itm.img, imgTypeF, imgXF, imgYF, maxSz, maxSz);
+      } catch(ex) {}
     }
 
     y += rowH;
@@ -2375,13 +2376,21 @@ async function generatePDF(){
   var loteDisplay = lote ? ' - LOTE ' + lote.replace(/\s+/g,'') : '';
   var fname = numProp + ' - ' + orgaoSlug + loteDisplay + '.pdf';
   doc.save(fname);
-  // Salvar proposta (sem duplicar)
+  // Salvar proposta — busca por id OU por num para evitar duplicata
   var _d = getFormData();
   if(_d.num && _d.orgao){
-    var _hi = history_.findIndex(function(h){ return h.id===_d.id && h.tipo!=='pedido'; });
-    if(_hi>=0){ history_[_hi]=_d; }
-    else{ history_.unshift(_d); nextProposalNum(true); }
-    editingId=null; saveLS(); renderHist();
+    var _hi = history_.findIndex(function(h){
+      return h.tipo!=='pedido' && (String(h.id)===String(_d.id) || h.num===_d.num);
+    });
+    if(_hi>=0){
+      _d.id = history_[_hi].id; // manter id original
+      history_[_hi]=_d;
+    } else {
+      history_.unshift(_d);
+      nextProposalNum(true);
+    }
+    editingId = _d.id;
+    saveLS(); renderHist();
   }
   toast('PDF gerado!','ok');
 }
@@ -2444,10 +2453,19 @@ function getFormData(){
 function saveHist(){
   var d=getFormData();
   if(!d.num||!d.orgao){ toast('Preencha ao menos Nº e Destinatário.','err'); return; }
-  var idx=history_.findIndex(function(h){ return h.id===d.id; });
-  if(idx>=0) history_[idx]=d; else history_.unshift(d);
-  if(idx<0) nextProposalNum(true);
-  saveLS(); toast('Proposta salva no histórico!','ok'); editingId=null;
+  // Busca por id OU por num para evitar duplicata
+  var idx=history_.findIndex(function(h){
+    return h.tipo!=='pedido' && (String(h.id)===String(d.id) || h.num===d.num);
+  });
+  if(idx>=0){
+    d.id = history_[idx].id; // preservar id original
+    history_[idx]=d;
+  } else {
+    history_.unshift(d);
+    nextProposalNum(true);
+  }
+  editingId=d.id;
+  saveLS(); toast('Proposta salva no histórico!','ok');
 }
 
 function weekKey(date){
@@ -3176,8 +3194,11 @@ function gerarPdfPedido(){
   var fname   = siglaOrgao+ofSlug+pedSlug+'.pdf';
   doc.save(fname);
   var pedIdChk = 'ped_' + d.num;
-  var existePed = history_.findIndex(function(h){ return h.id===pedIdChk; });
-  if(existePed < 0){ salvarPedido(); } else { saveLS(); renderHist(); }
+  var existePed = history_.findIndex(function(h){
+    return h.tipo==='pedido' && (h.id===pedIdChk || h.num===d.num);
+  });
+  if(existePed < 0){ salvarPedido(); }
+  else { history_[existePed].grand=d.grand; saveLS(); renderHist(); }
   toast('PDF do Pedido gerado!','ok');
 }
 function loadCadProdImg(input){
