@@ -744,7 +744,10 @@ label .req-star{font-size:11px}
       var cliSnap = await getDocs(collection(db,'clientes'));
       var fbCli = [];
       cliSnap.forEach(function(d){ fbCli.push(d.data()); });
-      if(fbCli.length > 0){
+      // Sempre atualizar clients_ (mesmo array vazio limpa dados obsoletos do local)
+      if(typeof window._setClients==='function'){
+        window._setClients(fbCli);
+      } else {
         window.clients_ = fbCli;
         localStorage.setItem('sn_cli', JSON.stringify(fbCli));
       }
@@ -752,8 +755,10 @@ label .req-star{font-size:11px}
       var prodSnap = await getDocs(collection(db,'produtos'));
       var fbProd = [];
       prodSnap.forEach(function(d){ fbProd.push(d.data()); });
-      if(fbProd.length > 0){
-        // Fotos incluídas no Firebase (2KB x 80 produtos = 160KB)
+      // Sempre atualizar products_
+      if(typeof window._setProducts==='function'){
+        window._setProducts(fbProd);
+      } else {
         window.products_ = fbProd;
         localStorage.setItem('sn_prod', JSON.stringify(fbProd));
       }
@@ -763,8 +768,11 @@ label .req-star{font-size:11px}
       var fbHist = [];
       propSnap.forEach(function(d){ var o=d.data(); o.tipo=o.tipo||'proposta'; fbHist.push(o); });
       pedSnap.forEach(function(d){  var o=d.data(); o.tipo='pedido'; fbHist.push(o); });
-      if(fbHist.length > 0){
-        fbHist.sort(function(a,b){ return (b.id||0)-(a.id||0); });
+      // Sempre atualizar history_ com dados do banco
+      fbHist.sort(function(a,b){ return (b.id||0)-(a.id||0); });
+      if(typeof window._setHistory==='function'){
+        window._setHistory(fbHist);
+      } else {
         window.history_ = fbHist;
         localStorage.setItem('sn_hist', JSON.stringify(fbHist));
       }
@@ -779,10 +787,7 @@ label .req-star{font-size:11px}
       console.warn('Firebase offline, usando localStorage:', e.message);
     }
     window._fbReady = true;
-    // Atualizar UI se app já iniciado
-    if(typeof renderCadLists==='function') renderCadLists();
-    if(typeof renderHist==='function') renderHist();
-    if(typeof initProdCodField==='function') initProdCodField();
+    // UI já atualizada pelos setters _setHistory/_setClients/_setProducts
   };
 
   // Executar carregamento após DOM pronto
@@ -1626,6 +1631,7 @@ try { clients_  = JSON.parse(localStorage.getItem('sn_cli')   || '[]'); } catch(
 try { products_ = JSON.parse(localStorage.getItem('sn_prod')  || '[]'); } catch(e){ products_=[]; }
 
 function saveLS(){
+  window.history_ = history_; // garantir sincronismo de escopo
   try{ localStorage.setItem('sn_hist', JSON.stringify(history_)); }catch(e){}
   // Sincronizar com Firebase
   history_.forEach(function(h){
@@ -1638,12 +1644,14 @@ function saveLS(){
   });
 }
 function saveLSCli(){
+  window.clients_ = clients_;
   try{ localStorage.setItem('sn_cli', JSON.stringify(clients_)); }catch(e){}
   clients_.forEach(function(c){
     if(c && c.id && typeof window.fbSaveCliente==='function') window.fbSaveCliente(c);
   });
 }
 function saveLSProd(){
+  window.products_ = products_;
   try{ localStorage.setItem('sn_prod', JSON.stringify(products_)); }catch(e){}
   products_.forEach(function(p){
     if(!p || !p.id) return;
@@ -1653,6 +1661,29 @@ function saveLSProd(){
     }
   });
 }
+
+/* ══════════════════════════════════════════
+   SETTERS GLOBAIS — Firebase module → script
+   O módulo Firebase (type="module") não acessa
+   var history_ diretamente. Usa esses setters.
+══════════════════════════════════════════ */
+window._setHistory = function(arr){
+  history_ = arr;
+  try{ localStorage.setItem('sn_hist', JSON.stringify(arr)); }catch(e){}
+  if(typeof renderHist==='function') renderHist();
+};
+window._setClients = function(arr){
+  clients_ = arr;
+  try{ localStorage.setItem('sn_cli', JSON.stringify(arr)); }catch(e){}
+  if(typeof renderCadLists==='function') renderCadLists();
+};
+window._setProducts = function(arr){
+  products_ = arr;
+  try{ localStorage.setItem('sn_prod', JSON.stringify(arr)); }catch(e){}
+  if(typeof renderCadLists==='function') renderCadLists();
+  if(typeof initProdCodField==='function') initProdCodField();
+};
+
 
 /* ══════════════════════════════════════════
    LOGIN
